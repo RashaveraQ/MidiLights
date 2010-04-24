@@ -22,12 +22,23 @@ int main(void)
 	DDRD = 0xFE;
 	PORTD = 0xE1;
 
-	for (;;) {
 
+
+
+/*
+	PORTA = 4;
+	for (;;) {
+		PORTC = 0x7F;
+		_delay_ms(1);
+		PORTC = 0xFF;
+		_delay_ms(11);
+	}
+*/
+	for (;;) {
 		for (int i = 0; i < 8; i++) {
 			PORTA = 1 << i;
 
-			for (int j = 0; j < 3; j++ ) {
+			for (int j = 1; j < 3; j++ ) {
 				PORTD = 0xE1 & ~(1 << (j + 5));
 				_delay_ms(50);
 			}
@@ -39,6 +50,11 @@ int main(void)
 			}
 			PORTC = 0xFF;
 
+			for (int j = 0; j < 1; j++ ) {
+				PORTD = 0xE1 & ~(1 << (j + 5));
+				_delay_ms(50);
+			}
+			PORTD = 0xE1;
 		}
 
 		PORTA = 0;
