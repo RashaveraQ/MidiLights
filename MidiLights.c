@@ -25,7 +25,8 @@ ISR(TIMER0_OVF_vect)
 
 ISR(USART0_RX_vect)
 {
-
+	uint8_t d = UDR0;
+	gData[d % 8] |= 1 << ((d / 8) % 11);
 }
 
 int main(void)
@@ -54,6 +55,9 @@ int main(void)
 	//TCCR0B = 0x05;	// プリスケーラは、1024
 	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
 
+	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
+	UCSR0B = 0x90;	// 受信および受信完了割り込み許可
+
 	sei();
 /*
 	for (int i = 0; i < 8; i++) {
@@ -69,12 +73,12 @@ int main(void)
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
 		}
-
-		for (int i = 0; i < 10; i++) {
+/*		for (int i = 0; i < 10; i++) {
 			long r = random();
 			gData[r % 8] |= 1 << ((r / 8)% 11);
 		}
-		_delay_ms(100);
+*/
+		_delay_ms(1000);
 	}
 
 
