@@ -6,31 +6,102 @@
 #include <stdlib.h>
 
 uint16_t	gData[8];
-uint8_t		gLedPowerBit = 0;
 
 ISR(TIMER0_OVF_vect)
 {
+	static uint8_t	sLedPowerBit = 0;
+
 	PORTA = 0;	// LEDの電源OFF
 
-	PORTC = ~(0xFF & gData[gLedPowerBit]);
-	PORTD = 0x01 | (0xE0 & ~(0xE0 & (gData[gLedPowerBit] >> 3)));
+	PORTC = ~(0xFF & gData[sLedPowerBit]);
+	PORTD = 0x01 | (0xE0 & ~(0xE0 & (gData[sLedPowerBit] >> 3)));
 
-	gLedPowerBit++;
-	if (gLedPowerBit > 7) {
-		gLedPowerBit = 0;
+	sLedPowerBit++;
+	if (sLedPowerBit > 7) {
+		sLedPowerBit = 0;
 	}
 
-	PORTA = 1 << gLedPowerBit;	// 指定のLEDの電源ON
+	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
 }
 
 ISR(USART0_RX_vect)
 {
+	static uint8_t	operand = 0;
+	static uint8_t	ignore_count = 0;
+
 	uint8_t d = UDR0;
-	gData[d % 8] |= 1 << ((d / 8) % 11);
+
+	if (ignore_count) {
+		ignore_count--;
+		return;
+	}
+
+	switch (operand) {
+	case 0:	// 未定
+		switch (d & 0xF0) {
+		case 0x90:	// ノートオン
+		case 0x80:	// ノートオフ
+			//gData[4] = 0xFFFF;
+		case 0xB0:	// コントロールチェンジ or モード・チェンジ
+		case 0xC0:	// プログラムチェンジ
+			operand = 0xF0 & d;
+			break;
+		case 0xF0:	// システム・リアルタイム・メッセージ
+			if (d == 0xF0) {
+				operand = d;
+			}
+			break;
+		}
+		break;
+	case 0x90:	// ノートオン
+	case 0x80:	// ノートオフ
+		// データバイトにて指定するノートナンバーとは、
+		// 最も低い音を0、最も高い音を127と割り当てた音の高さのことである。
+		// 中央ハにはノートナンバー60が割り当てられ、
+		// 88鍵盤のグランドピアノで出せる音域は
+		// ノートナンバー21～108と割り当てられる
+//		d -= 21;	// LEDの配線を修正後用
+		d -= 19;	// 暫定LEDの配線を直す前
+
+
+		uint8_t idx = d / 11;
+		uint8_t data = 1 << (d % 11);
+		switch (operand) {
+		case 0x90:	// ノートオン
+			gData[idx] |= data;
+			break;
+		case 0x80:	// ノートオフ
+			gData[idx] &= ~data;
+			break;
+		}
+		ignore_count = 1;
+		operand = 0;
+		break;
+	case 0xB0:	// コントロールチェンジ or モード・チェンジ
+		// オール・ノート・オフ
+		if (d == 0x7B) {
+			for (int i = 0; i < 8; i++) {
+				gData[i] = 0;
+			}
+		}
+		// break しない
+	case 0xC0:	// プログラムチェンジ
+		ignore_count = 1;
+		operand = 0;
+		break;
+	case 0xF0:	// システム・リアルタイム・メッセージ
+		// 終了メッセージ
+		if (d == 0xF7) {
+			operand = 0;
+		}
+		break;
+	}
 }
 
 int main(void)
 {
+	cli();
+
 	// LEDの電源スイッチ
 	DDRA = 0xFF;
 	PORTA = 0;
@@ -50,7 +121,8 @@ int main(void)
 	PORTD = 0xE1;
 
 	// タイマ設定
-	TCCR0B = 0x03;	// プリスケーラは、64
+	TCCR0B = 0x02;	// プリスケーラは、8
+	//TCCR0B = 0x03;	// プリスケーラは、64
 	//TCCR0B = 0x04;	// プリスケーラは、256
 	//TCCR0B = 0x05;	// プリスケーラは、1024
 	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
@@ -59,73 +131,10 @@ int main(void)
 	UCSR0B = 0x90;	// 受信および受信完了割り込み許可
 
 	sei();
-/*
-	for (int i = 0; i < 8; i++) {
-		gData[i] = 1 << 10;
-	}
-
-	for (;;) {
-		_delay_ms(10);
-	}
-
-*/
 	for (;;) {
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
 		}
-/*		for (int i = 0; i < 10; i++) {
-			long r = random();
-			gData[r % 8] |= 1 << ((r / 8)% 11);
-		}
-*/
 		_delay_ms(1000);
 	}
-
-
-/*
-	PORTA = 4;
-	for (;;) {
-		PORTC = 0x7F;
-		_delay_ms(1);
-		PORTC = 0xFF;
-		_delay_ms(11);
-	}
-*/
-/*	for (;;) {
-		for (int i = 0; i < 8; i++) {
-			PORTA = 1 << i;
-
-			for (int j = 1; j < 3; j++ ) {
-				PORTD = 0xE1 & ~(1 << (j + 5));
-				_delay_ms(50);
-			}
-			PORTD = 0xE1;
-
-			for (int j = 0; j < 8; j++ ) {
-				PORTC = ~(1 << j);
-				_delay_ms(50);
-			}
-			PORTC = 0xFF;
-
-			for (int j = 0; j < 1; j++ ) {
-				PORTD = 0xE1 & ~(1 << (j + 5));
-				_delay_ms(50);
-			}
-			PORTD = 0xE1;
-		}
-
-		PORTA = 0;
-		PORTC = 0x00;
-		PORTD = 0x01;
-		for (int l = 0; l < 100; l++) {
-			for (int i = 0; i < 8; i++) {
-				PORTA = 1 << i;
-				_delay_ms(1);
-			}
-		}
-		PORTA = 0;
-		PORTC = 0xFF;
-		PORTD = 0xE1;
-	}
-*/
 }
