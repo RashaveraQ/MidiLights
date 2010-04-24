@@ -1,6 +1,32 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#define F_CPU 10000000UL
 #include <util/delay.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+uint16_t	gData[8];
+uint8_t		gLedPowerBit = 0;
+
+ISR(TIMER0_OVF_vect)
+{
+	PORTA = 0;	// LEDの電源OFF
+
+	PORTC = ~(0xFF & gData[gLedPowerBit]);
+	PORTD = 0x01 | (0xE0 & ~(0xE0 & (gData[gLedPowerBit] >> 3)));
+
+	gLedPowerBit++;
+	if (gLedPowerBit > 7) {
+		gLedPowerBit = 0;
+	}
+
+	PORTA = 1 << gLedPowerBit;	// 指定のLEDの電源ON
+}
+
+ISR(USART0_RX_vect)
+{
+
+}
 
 int main(void)
 {
@@ -22,7 +48,34 @@ int main(void)
 	DDRD = 0xFE;
 	PORTD = 0xE1;
 
+	// タイマ設定
+	TCCR0B = 0x03;	// プリスケーラは、64
+	//TCCR0B = 0x04;	// プリスケーラは、256
+	//TCCR0B = 0x05;	// プリスケーラは、1024
+	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
 
+	sei();
+/*
+	for (int i = 0; i < 8; i++) {
+		gData[i] = 1 << 10;
+	}
+
+	for (;;) {
+		_delay_ms(10);
+	}
+
+*/
+	for (;;) {
+		for (int i = 0; i < 8; i++) {
+			gData[i] = 0;
+		}
+
+		for (int i = 0; i < 10; i++) {
+			long r = random();
+			gData[r % 8] |= 1 << ((r / 8)% 11);
+		}
+		_delay_ms(100);
+	}
 
 
 /*
@@ -34,7 +87,7 @@ int main(void)
 		_delay_ms(11);
 	}
 */
-	for (;;) {
+/*	for (;;) {
 		for (int i = 0; i < 8; i++) {
 			PORTA = 1 << i;
 
@@ -70,4 +123,5 @@ int main(void)
 		PORTC = 0xFF;
 		PORTD = 0xE1;
 	}
+*/
 }
