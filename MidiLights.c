@@ -128,6 +128,22 @@ int main(void)
 	UCSR0B = 0x90;	// óM‚¨‚æ‚ÑóMŠ®—¹Š„‚è‚İ‹–‰Â
 
 	sei();
+
+	for (int k = 0; k < 2; k++) {
+		for (int i = 0; i < 88; i++) {
+			uint8_t idx = i / 11;
+			uint8_t data = 1 << (i % 11);
+			gData[idx] |= data;
+			_delay_ms(2);
+		}
+		for (int i = 0; i < 88; i++) {
+			uint8_t idx = i / 11;
+			uint8_t data = 1 << (i % 11);
+			gData[idx] &= ~data;
+			_delay_ms(2);
+		}
+	}
+
 	for (;;) {
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
