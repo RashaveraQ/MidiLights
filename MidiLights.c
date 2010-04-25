@@ -65,7 +65,7 @@ ISR(USART0_RX_vect)
 
 
 		uint8_t idx = d / 11;
-		uint8_t data = 1 << (d % 11);
+		uint16_t data = 1 << (d % 11);
 		switch (operand) {
 		case 0x90:	// ƒm[ƒgƒIƒ“
 			gData[idx] |= data;
@@ -129,19 +129,17 @@ int main(void)
 
 	sei();
 
-	for (int k = 0; k < 2; k++) {
-		for (int i = 0; i < 88; i++) {
+	for (int k = 0; k < 3; k++) {
+		for (uint8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
-			uint8_t data = 1 << (i % 11);
+			uint16_t data = 1 << (i % 11);
 			gData[idx] |= data;
 			_delay_ms(4);
 		}
-		for (int i = 0; i < 88; i++) {
-			uint8_t idx = i / 11;
-			uint8_t data = 1 << (i % 11);
-			gData[idx] &= ~data;
-			_delay_ms(4);
+		for (int i = 0; i < 8; i++) {
+			gData[i] = 0;
 		}
+		_delay_ms(4*88);
 	}
 
 	for (;;) {
