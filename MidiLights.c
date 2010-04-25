@@ -13,8 +13,11 @@ ISR(TIMER0_OVF_vect)
 
 	PORTA = 0;	// LEDの電源OFF
 
-	PORTC = ~(0xFF & gData[sLedPowerBit]);
-	PORTD = 0x01 | (0xE0 & ~(0xE0 & (gData[sLedPowerBit] >> 3)));
+	PORTD = 0x01
+			|(0x02 & ~(gData[sLedPowerBit] << 1))
+			|(0xF8 & ~(gData[sLedPowerBit] << 2))
+			|(0x04 & ~(gData[sLedPowerBit] >> 4));
+	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
 
 	sLedPowerBit++;
 	if (sLedPowerBit > 7) {
@@ -60,7 +63,18 @@ ISR(USART0_RX_vect)
 		// 中央ハにはノートナンバー60が割り当てられ、
 		// 88鍵盤のグランドピアノで出せる音域は
 		// ノートナンバー21～108と割り当てられる
-		d -= 21;	// LEDの配線を修正後用
+/*
+		for (int i = 0; i < 8; i++) {
+			gData[i] = 0;
+		}
+*/
+		if (d < 32 || 119 < d) {
+			ignore_count = 1;
+			operand = 0;
+			break;
+		}
+
+		d -= 32;	// LEDの配線を修正後用
 		//d -= 18;	// 暫定LEDの配線を直す前
 
 
@@ -112,13 +126,12 @@ int main(void)
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
 	DDRC = 0xFF;
-	PORTC = 0xFF;
+	PORTC = 0xC3;
 
 	// D0は、MIDI入力
-	// D1-D4は、未接続
-	// D5-D7は、LEDの制御スイッチ
+	// D1-D7は、LEDの制御スイッチ
 	DDRD = 0xFE;
-	PORTD = 0xE1;
+	PORTD = 0xFF;
 
 	// タイマ設定
 	TCCR0B = 0x01;	// プリスケーラは、1
@@ -129,23 +142,25 @@ int main(void)
 
 	sei();
 
-	for (int k = 0; k < 3; k++) {
+	for (int k = 0; k < 2; k++) {
 		for (uint8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
 			gData[idx] |= data;
-			_delay_ms(4);
+			_delay_ms(3);
 		}
-		for (int i = 0; i < 8; i++) {
-			gData[i] = 0;
+		for (uint8_t i = 0; i < 88; i++) {
+			uint8_t idx = i / 11;
+			uint16_t data = 1 << (i % 11);
+			gData[idx] &= ~data;
+			_delay_ms(3);
 		}
-		_delay_ms(4*88);
 	}
 
 	for (;;) {
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
 		}
-		_delay_ms(1000);
+		_delay_ms(500);
 	}
 }
