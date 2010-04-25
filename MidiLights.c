@@ -65,9 +65,9 @@ ISR(USART0_RX_vect)
 		// 88鍵盤のグランドピアノで出せる音域は
 		// ノートナンバー21～108と割り当てられる
 		gPlaying = 1;
-		for (int i = 0; i < 8; i++) {
-			gData[i] = 0;
-		}
+//		for (int i = 0; i < 8; i++) {
+//			gData[i] = 0;
+//		}
 
 		if (d < 32 || 119 < d) {
 			ignore_count = 1;
@@ -148,13 +148,13 @@ int main(void)
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
 			gData[idx] |= data;
-			_delay_ms(3);
+			_delay_ms(1);
 		}
 		for (uint8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
 			gData[idx] &= ~data;
-			_delay_ms(3);
+			_delay_ms(1);
 		}
 	}
 
