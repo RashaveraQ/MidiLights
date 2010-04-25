@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 uint16_t	gData[8];
+uint8_t		gPlaying;
 
 ISR(TIMER0_OVF_vect)
 {
@@ -63,11 +64,11 @@ ISR(USART0_RX_vect)
 		// 中央ハにはノートナンバー60が割り当てられ、
 		// 88鍵盤のグランドピアノで出せる音域は
 		// ノートナンバー21～108と割り当てられる
-/*
+		gPlaying = 1;
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
 		}
-*/
+
 		if (d < 32 || 119 < d) {
 			ignore_count = 1;
 			operand = 0;
@@ -158,9 +159,16 @@ int main(void)
 	}
 
 	for (;;) {
+
+		gPlaying = 0;
+
+		_delay_ms(1000);
+
+		if (gPlaying)
+			continue;
+
 		for (int i = 0; i < 8; i++) {
 			gData[i] = 0;
 		}
-		_delay_ms(500);
 	}
 }
