@@ -33,6 +33,8 @@ ISR(USART0_RX_vect)
 	static uint8_t	operand = 0;
 	static uint8_t	ignore_count = 0;
 
+	gPlaying = 1;
+
 	uint8_t d = UDR0;
 
 	if (ignore_count) {
@@ -64,7 +66,6 @@ ISR(USART0_RX_vect)
 		// 中央ハにはノートナンバー60が割り当てられ、
 		// 88鍵盤のグランドピアノで出せる音域は
 		// ノートナンバー21～108と割り当てられる
-		gPlaying = 1;
 //		for (int i = 0; i < 8; i++) {
 //			gData[i] = 0;
 //		}
@@ -162,7 +163,7 @@ int main(void)
 
 		gPlaying = 0;
 
-		_delay_ms(1000);
+		_delay_ms(3000);
 
 		if (gPlaying)
 			continue;
