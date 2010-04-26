@@ -31,6 +31,7 @@ ISR(TIMER0_OVF_vect)
 ISR(USART0_RX_vect)
 {
 	static uint8_t	operand = 0;
+	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
 
 	gPlaying = 1;
@@ -47,7 +48,8 @@ ISR(USART0_RX_vect)
 		switch (d & 0xF0) {
 		case 0x90:	// ノートオン
 		case 0x80:	// ノートオフ
-			//gData[4] = 0xFFFF;
+			note = -1;
+			// break しない
 		case 0xB0:	// コントロールチェンジ or モード・チェンジ
 		case 0xC0:	// プログラムチェンジ
 			operand = 0xF0 & d;
@@ -66,22 +68,23 @@ ISR(USART0_RX_vect)
 		// 中央ハにはノートナンバー60が割り当てられ、
 		// 88鍵盤のグランドピアノで出せる音域は
 		// ノートナンバー21～108と割り当てられる
-//		for (int i = 0; i < 8; i++) {
-//			gData[i] = 0;
-//		}
 
-		if (d < 32 || 119 < d) {
-			ignore_count = 1;
-			operand = 0;
+		if (note == -1) {
+			if (d < 32 || 119 < d) {
+				ignore_count = 1;
+				operand = 0;
+				break;
+			}
+			note = d - 32;
 			break;
 		}
 
-		d -= 32;	// LEDの配線を修正後用
-		//d -= 18;	// 暫定LEDの配線を直す前
+		if (d == 0) {
+			operand = 0x80;
+		}
 
-
-		uint8_t idx = d / 11;
-		uint16_t data = 1 << (d % 11);
+		uint8_t idx = note / 11;
+		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 		case 0x90:	// ノートオン
 			gData[idx] |= data;
@@ -90,7 +93,6 @@ ISR(USART0_RX_vect)
 			gData[idx] &= ~data;
 			break;
 		}
-		ignore_count = 1;
 		operand = 0;
 		break;
 	case 0xB0:	// コントロールチェンジ or モード・チェンジ
