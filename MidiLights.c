@@ -14,10 +14,7 @@ ISR(TIMER0_OVF_vect)
 
 	PORTA = 0;	// LED‚Ì“dŒ¹OFF
 
-	PORTD = 0x01
-			|(0x02 & ~(gData[sLedPowerBit] << 1))
-			|(0xF8 & ~(gData[sLedPowerBit] << 2))
-			|(0x04 & ~(gData[sLedPowerBit] >> 4));
+	PORTD = ~(gData[sLedPowerBit] << 1);
 	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
 
 	sLedPowerBit++;
