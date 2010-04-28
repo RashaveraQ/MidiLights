@@ -142,12 +142,7 @@ int main(void)
 	UCSR0B = 0x90;	// óM‚¨‚æ‚ÑóMŠ®—¹Š„‚è‚İ‹–‰Â
 
 	sei();
-/*
-	for (;;) {
-		gData[3] = 1 << 7;
-		_delay_ms(3000);
-	}
-*/
+
 	for (int k = 0; k < 2; k++) {
 		for (uint8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
