@@ -17,12 +17,12 @@ ISR(TIMER0_OVF_vect)
 	PORTD = ~(gData[sLedPowerBit] << 1);
 	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
 
+	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
+
 	sLedPowerBit++;
 	if (sLedPowerBit > 7) {
 		sLedPowerBit = 0;
 	}
-
-	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
 }
 
 ISR(USART0_RX_vect)
@@ -67,12 +67,12 @@ ISR(USART0_RX_vect)
 		// ノートナンバー21～108と割り当てられる
 
 		if (note == -1) {
-			if (d < 32 || 119 < d) {
+			if (d < 21 || 108 < d) {
 				ignore_count = 1;
 				operand = 0;
 				break;
 			}
-			note = d - 32;
+			note = d - 21;
 			break;
 		}
 
@@ -142,7 +142,12 @@ int main(void)
 	UCSR0B = 0x90;	// 受信および受信完了割り込み許可
 
 	sei();
-
+/*
+	for (;;) {
+		gData[3] = 1 << 7;
+		_delay_ms(3000);
+	}
+*/
 	for (int k = 0; k < 2; k++) {
 		for (uint8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
