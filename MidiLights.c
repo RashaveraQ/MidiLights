@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 uint16_t	gData[8];
-uint8_t		gPlaying;
 
 ISR(TIMER0_OVF_vect)
 {
@@ -30,8 +29,6 @@ ISR(USART0_RX_vect)
 	static uint8_t	operand = 0;
 	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
-
-	gPlaying = 1;
 
 	uint8_t d = UDR0;
 
@@ -143,32 +140,35 @@ int main(void)
 
 	sei();
 
-	for (int k = 0; k < 2; k++) {
-		for (uint8_t i = 0; i < 88; i++) {
+		for (int8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
 			gData[idx] |= data;
-			_delay_ms(1);
+			_delay_ms(3);
 		}
-		for (uint8_t i = 0; i < 88; i++) {
+
+		for (int8_t i = 0; i < 88; i++) {
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
 			gData[idx] &= ~data;
-			_delay_ms(1);
+			_delay_ms(3);
 		}
-	}
+
+		for (int8_t i = 87; i >= 0; i--) {
+			uint8_t idx = i / 11;
+			uint16_t data = 1 << (i % 11);
+			gData[idx] |= data;
+			_delay_ms(3);
+		}
+
+		for (int8_t i = 87; i >= 0; i--) {
+			uint8_t idx = i / 11;
+			uint16_t data = 1 << (i % 11);
+			gData[idx] &= ~data;
+			_delay_ms(3);
+		}
 
 	for (;;) {
-
-		gPlaying = 0;
-
 		_delay_ms(3000);
-
-		if (gPlaying)
-			continue;
-
-		for (int i = 0; i < 8; i++) {
-			gData[i] = 0;
-		}
 	}
 }
