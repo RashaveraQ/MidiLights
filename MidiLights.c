@@ -13,7 +13,10 @@ ISR(TIMER0_OVF_vect)
 
 	PORTA = 0;	// LEDの電源OFF
 
-	PORTD = ~(gData[sLedPowerBit] << 1);
+//	PORTD = 0x03 | ~(gData[sLedPowerBit] << 1);
+	PORTD &= 0x03;
+	PORTD |= 0xFC & (~(gData[sLedPowerBit] << 1));
+	PORTB = 0x02 & ~(gData[sLedPowerBit] << 1);
 	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
 
 	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
@@ -24,13 +27,17 @@ ISR(TIMER0_OVF_vect)
 	}
 }
 
-ISR(USART0_RX_vect)
+
+
+void recv(uint8_t d)
 {
+	//gData[1] = 0x1;
+
 	static uint8_t	operand = 0;
 	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
 
-	uint8_t d = UDR0;
+	UDR0 = d;
 
 	if (ignore_count) {
 		ignore_count--;
@@ -110,6 +117,53 @@ ISR(USART0_RX_vect)
 	}
 }
 
+ISR(USART0_RX_vect)
+{
+	uint8_t d = UDR0;
+	recv(d);
+}
+
+
+volatile int gFlag;
+
+ISR(USART0_TX_vect)
+{
+	gData[0] = 0x1;
+	gFlag = 0;
+}
+
+ISR(USART0_UDRE_vect)
+{
+	gData[0] = 0x2;
+	gFlag = 0;
+}
+
+void send(uint8_t data)
+{
+	// 送信完了していない限り、繰り返す。
+//	while ((UCSR0A & (1 << TXC0)) == 0x00);
+
+	// 送信データ・レジスタが空きでない限り、繰り返す。
+//	while ((UCSR0A & (1 << UDRE0)) == 0x00);
+	_delay_ms(1);
+
+	// 送信データをセット。
+	recv(data);
+}
+
+void note_on(uint8_t note)
+{
+	send(0x90);
+	send(note + 21);
+	send(100);
+}
+
+void note_off()
+{
+	send(0xB0);
+	send(0x7B);
+}
+
 int main(void)
 {
 	cli();
@@ -120,7 +174,7 @@ int main(void)
 
 	// 未接続(未使用)ピンは、ノイズ耐性向上のため'0'出力(GND接続状態)とします。
 	DDRB = 0xFF;
-	PORTB = 0;
+	PORTB = 0x02;
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
 	DDRC = 0xFF;
@@ -129,46 +183,66 @@ int main(void)
 	// D0は、MIDI入力
 	// D1-D7は、LEDの制御スイッチ
 	DDRD = 0xFE;
-	PORTD = 0xFF;
+	PORTD = 0xFD;
 
 	// タイマ設定
 	TCCR0B = 0x01;	// プリスケーラは、1
 	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
 
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
-	UCSR0B = 0x90;	// 受信および受信完了割り込み許可
+	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
 
 	sei();
 
-		for (int8_t i = 0; i < 88; i++) {
-			uint8_t idx = i / 11;
-			uint16_t data = 1 << (i % 11);
-			gData[idx] |= data;
-			_delay_ms(3);
-		}
+	for (int8_t i = 0; i < 88; i++) {
+		uint8_t idx = i / 11;
+		uint16_t data = 1 << (i % 11);
+		gData[idx] |= data;
+		_delay_ms(3);
+	}
 
-		for (int8_t i = 0; i < 88; i++) {
-			uint8_t idx = i / 11;
-			uint16_t data = 1 << (i % 11);
-			gData[idx] &= ~data;
-			_delay_ms(3);
-		}
+	for (int8_t i = 0; i < 88; i++) {
+		uint8_t idx = i / 11;
+		uint16_t data = 1 << (i % 11);
+		gData[idx] &= ~data;
+		_delay_ms(3);
+	}
 
-		for (int8_t i = 87; i >= 0; i--) {
-			uint8_t idx = i / 11;
-			uint16_t data = 1 << (i % 11);
-			gData[idx] |= data;
-			_delay_ms(3);
-		}
+	for (int8_t i = 87; i >= 0; i--) {
+		uint8_t idx = i / 11;
+		uint16_t data = 1 << (i % 11);
+		gData[idx] |= data;
+		_delay_ms(3);
+	}
 
-		for (int8_t i = 87; i >= 0; i--) {
-			uint8_t idx = i / 11;
-			uint16_t data = 1 << (i % 11);
-			gData[idx] &= ~data;
-			_delay_ms(3);
-		}
+	for (int8_t i = 87; i >= 0; i--) {
+		uint8_t idx = i / 11;
+		uint16_t data = 1 << (i % 11);
+		gData[idx] &= ~data;
+		_delay_ms(3);
+	}
 
 	for (;;) {
-		_delay_ms(3000);
+/*for (int8_t i = 0; i < 88; i++) {
+			note_on(i);
+			_delay_ms(1);
+		}
+		for (int8_t i = 87; i >= 0; i--) {
+			uint8_t idx = i / 11;
+			uint16_t data = 1 << (i % 11);
+			gData[idx] |= data;
+			_delay_ms(3);
+		}
+
+		for (int8_t i = 87; i >= 0; i--) {
+			uint8_t idx = i / 11;
+			uint16_t data = 1 << (i % 11);
+			gData[idx] &= ~data;
+			_delay_ms(3);
+		}
+
+		note_off();
+*/
+		_delay_ms(5000);
 	}
 }
