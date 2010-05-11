@@ -7,6 +7,7 @@
 
 uint16_t	gData[8];
 
+// タイマー通知
 ISR(TIMER0_OVF_vect)
 {
 	static uint8_t	sLedPowerBit = 0;
@@ -27,22 +28,20 @@ ISR(TIMER0_OVF_vect)
 	}
 }
 
-
-
+// USART0, Rx Complete 
 void recv(uint8_t d)
 {
 	//gData[1] = 0x1;
-
 	static uint8_t	operand = 0;
 	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
-
-	UDR0 = d;
 
 	if (ignore_count) {
 		ignore_count--;
 		return;
 	}
+
+	//uint8_t d = UDR0;
 
 	switch (operand) {
 	case 0:	// 未定
@@ -119,23 +118,20 @@ void recv(uint8_t d)
 
 ISR(USART0_RX_vect)
 {
-	uint8_t d = UDR0;
-	recv(d);
+	recv(UDR0);
 }
-
-
 volatile int gFlag;
 
+// USART0, Tx Complete 
 ISR(USART0_TX_vect)
 {
 	gData[0] = 0x1;
 	gFlag = 0;
 }
 
+// USART0 Data Register Empty 
 ISR(USART0_UDRE_vect)
 {
-	gData[0] = 0x2;
-	gFlag = 0;
 }
 
 void send(uint8_t data)
@@ -148,6 +144,7 @@ void send(uint8_t data)
 	_delay_ms(1);
 
 	// 送信データをセット。
+	UDR0 = data;
 	recv(data);
 }
 
@@ -183,15 +180,16 @@ int main(void)
 	// D0は、MIDI入力
 	// D1-D7は、LEDの制御スイッチ
 	DDRD = 0xFE;
-	PORTD = 0xFD;
+	PORTD = 0xFF;
 
 	// タイマ設定
 	TCCR0B = 0x01;	// プリスケーラは、1
 	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
-
+	
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
+//	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
 	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
-
+	
 	sei();
 
 	for (int8_t i = 0; i < 88; i++) {
@@ -223,10 +221,13 @@ int main(void)
 	}
 
 	for (;;) {
-/*for (int8_t i = 0; i < 88; i++) {
+/*
+		for (int8_t i = 0; i < 88; i++) {
 			note_on(i);
-			_delay_ms(1);
+			_delay_ms(10);
+			note_off();
 		}
+
 		for (int8_t i = 87; i >= 0; i--) {
 			uint8_t idx = i / 11;
 			uint16_t data = 1 << (i % 11);
@@ -240,8 +241,6 @@ int main(void)
 			gData[idx] &= ~data;
 			_delay_ms(3);
 		}
-
-		note_off();
 */
 		_delay_ms(5000);
 	}
