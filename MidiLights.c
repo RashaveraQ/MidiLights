@@ -87,7 +87,7 @@ ISR(USART0_RX_vect)
 			break;
 		}
 
-		if (d == 0) {
+		if (d == 0 || d > 127) {
 			operand = 0x80;
 		}
 
