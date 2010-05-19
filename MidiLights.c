@@ -29,7 +29,7 @@ ISR(TIMER0_OVF_vect)
 }
 
 // USART0, Rx Complete 
-void recv(uint8_t d)
+ISR(USART0_RX_vect)
 {
 	//gData[1] = 0x1;
 	static uint8_t	operand = 0;
@@ -41,7 +41,7 @@ void recv(uint8_t d)
 		return;
 	}
 
-	//uint8_t d = UDR0;
+	uint8_t d = UDR0;
 
 	switch (operand) {
 	case 0:	// 未定
@@ -55,8 +55,16 @@ void recv(uint8_t d)
 			operand = 0xF0 & d;
 			break;
 		case 0xF0:	// システム・リアルタイム・メッセージ
-			if (d == 0xF0) {
+			switch (d) {
+			case 0xF0:
 				operand = d;
+				break;
+/*			case 0xFE:
+				for (int i = 0; i < 8; i++) {
+					gData[i] = 0;
+				}
+				break;
+*/
 			}
 			break;
 		}
@@ -97,10 +105,18 @@ void recv(uint8_t d)
 		break;
 	case 0xB0:	// コントロールチェンジ or モード・チェンジ
 		// オール・ノート・オフ
-		if (d == 0x7B) {
+		switch (d) {
+		case 0x78:
+		case 0x79:
+		case 0x7B:
+		case 0x7C:
+		case 0x7D:
+		case 0x7E:
+		case 0x7F:
 			for (int i = 0; i < 8; i++) {
 				gData[i] = 0;
 			}
+			break;
 		}
 		// break しない
 	case 0xC0:	// プログラムチェンジ
@@ -116,10 +132,6 @@ void recv(uint8_t d)
 	}
 }
 
-ISR(USART0_RX_vect)
-{
-	recv(UDR0);
-}
 volatile int gFlag;
 
 // USART0, Tx Complete 
@@ -140,12 +152,11 @@ void send(uint8_t data)
 //	while ((UCSR0A & (1 << TXC0)) == 0x00);
 
 	// 送信データ・レジスタが空きでない限り、繰り返す。
-//	while ((UCSR0A & (1 << UDRE0)) == 0x00);
-	_delay_ms(1);
+	while ((UCSR0A & (1 << UDRE0)) == 0x00);
 
 	// 送信データをセット。
 	UDR0 = data;
-	recv(data);
+//	recv(data);
 }
 
 void note_on(uint8_t note)
@@ -188,8 +199,9 @@ int main(void)
 	
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
-	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
-	
+//	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
+	UCSR0B = 0x90;	// 送受信および受信完了割り込み許可
+
 	sei();
 
 	for (int8_t i = 0; i < 88; i++) {
