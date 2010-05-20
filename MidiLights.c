@@ -33,6 +33,7 @@ ISR(USART0_RX_vect)
 {
 	//gData[1] = 0x1;
 	static uint8_t	operand = 0;
+	static uint8_t  operand_bak = 0;
 	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
 
@@ -43,6 +44,7 @@ ISR(USART0_RX_vect)
 
 	uint8_t d = UDR0;
 
+retry:
 	switch (operand) {
 	case 0:	// 未定
 		switch (d & 0xF0) {
@@ -52,21 +54,26 @@ ISR(USART0_RX_vect)
 			// break しない
 		case 0xB0:	// コントロールチェンジ or モード・チェンジ
 		case 0xC0:	// プログラムチェンジ
-			operand = 0xF0 & d;
+			operand_bak = operand = 0xF0 & d;
 			break;
 		case 0xF0:	// システム・リアルタイム・メッセージ
 			switch (d) {
 			case 0xF0:
 				operand = d;
 				break;
-/*			case 0xFE:
-				for (int i = 0; i < 8; i++) {
-					gData[i] = 0;
-				}
-				break;
-*/
 			}
 			break;
+
+		default:	// ランニングステータス
+			switch (operand_bak) {
+			case 0x90:
+			case 0x80:
+				if ((d & 0x80) == 0x00) {
+					operand = operand_bak;
+					goto retry;
+				}
+				break;
+			}
 		}
 		break;
 	case 0x90:	// ノートオン
@@ -101,6 +108,7 @@ ISR(USART0_RX_vect)
 			gData[idx] &= ~data;
 			break;
 		}
+		note = -1;
 		operand = 0;
 		break;
 	case 0xB0:	// コントロールチェンジ or モード・チェンジ
