@@ -37,7 +37,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = MidiLights.o 
+OBJECTS = MidiLights.o fat16.o mmc.o rc5.o spi.o clock.o delay.o lcd.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -47,6 +47,27 @@ all: $(TARGET) MidiLights.hex MidiLights.eep MidiLights.lss size
 
 ## Compile
 MidiLights.o: ../MidiLights.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+fat16.o: ../fat16.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+mmc.o: ../mmc.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+rc5.o: ../rc5.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+spi.o: ../spi.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+clock.o: ../clock.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+delay.o: ../delay.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+lcd.o: ../lcd.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

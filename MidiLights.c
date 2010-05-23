@@ -5,10 +5,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "mmc.h"
+#include "spi.h"
+
 uint16_t	gData[8];
 
+// Variables
+u08 sharedmem[512];
+/*
+u08 rx_buf[RX_BUF_SIZE], rx_rdp=0, rx_wrp=0;	// RX buffer
+u08 flags=KEY_FLAG, dspd=0, state=STOP;	// Flags
+u16 tempo, new_ocr1a;	// Tempo memory
+u32 trk_len;	// Track length
+u32 time=0, delta_time=0;	// Deltatimes
+//u16 rtime;
+u08 time_min, time_sec, real_time=0, limit_count=RTC_SOFT_COUNT; // RTC
+s08 speed, transpose;
+*/
+u08 file_num=0, file_cnt=0;	// File
+u16 *file_pos;
+
 // タイマー通知
-ISR(TIMER0_OVF_vect)
+ISR(TIMER2_OVF_vect)
 {
 	static uint8_t	sLedPowerBit = 0;
 
@@ -17,7 +35,8 @@ ISR(TIMER0_OVF_vect)
 //	PORTD = 0x03 | ~(gData[sLedPowerBit] << 1);
 	PORTD &= 0x03;
 	PORTD |= 0xFC & (~(gData[sLedPowerBit] << 1));
-	PORTB = 0x02 & ~(gData[sLedPowerBit] << 1);
+	PORTB &= 0xFD;
+	PORTB |= 0x02 & ~(gData[sLedPowerBit] << 1);
 	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
 
 	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
@@ -154,6 +173,12 @@ ISR(USART0_UDRE_vect)
 {
 }
 
+// Pin Change Interrupt Request 1 
+ISR(PCINT1_vect)
+{
+	//gData[0]++;
+}
+
 void send(uint8_t data)
 {
 	// 送信完了していない限り、繰り返す。
@@ -189,8 +214,9 @@ int main(void)
 	PORTA = 0;
 
 	// 未接続(未使用)ピンは、ノイズ耐性向上のため'0'出力(GND接続状態)とします。
-	DDRB = 0xFF;
-	PORTB = 0x02;
+	// MMCのため、SS(PB4),MOSI(PB5),MISO(PB6),SCK(PB7)を0
+	DDRB = 0x0E;
+	PORTB = 0x03;
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
 	DDRC = 0xFF;
@@ -202,13 +228,16 @@ int main(void)
 	PORTD = 0xFF;
 
 	// タイマ設定
-	TCCR0B = 0x01;	// プリスケーラは、1
-	TIMSK0 = 0x01;	// タイマ０オーバーフロー割り込み許可
+	TCCR2B = 0x01;	// プリスケーラは、1
+	TIMSK2 = 0x01;	// タイマ２オーバーフロー割り込み許可
 	
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
-//	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
-	UCSR0B = 0x90;	// 送受信および受信完了割り込み許可
+	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
+
+	// MMC/SDカード用の初期化処理
+	//MMC_hw_init();
+	//spi_init();
 
 	sei();
 
@@ -239,6 +268,10 @@ int main(void)
 		gData[idx] &= ~data;
 		_delay_ms(3);
 	}
+
+	// ピン変化割り込み
+	PCICR = 1 << PCIE1;		// ポートB
+	PCMSK1 = 1 << PCINT8;	
 
 	for (;;) {
 /*
