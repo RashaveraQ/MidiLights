@@ -56,7 +56,7 @@
 #define MMC_CS_DDR	DDRB
 #define MMC_CS_PIN	PINB
 #define MMC_CS_PORT	PORTB
-#define PIN_MMC_CS PB2
+#define PIN_MMC_CS PB4
 
 // look in datasheet for complete list of commands
 #define MMC_CMD_0_GO_IDLE				0
@@ -302,6 +302,7 @@ void MMC_hw_init(void){
 u08 MMC_init(void){
 	u08 i;
 	u08 res;
+	
 	// the data sheet says that the MMC needs 74 clock pulses to startup
 	// 10*8== 80; 80>76
 	for( i = 0; i < 100; i++){

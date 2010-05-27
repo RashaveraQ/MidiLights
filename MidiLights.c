@@ -3,27 +3,15 @@
 #define F_CPU 10000000UL
 #include <util/delay.h>
 #include <stdint.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
+#include "lcd.h"
 #include "mmc.h"
 #include "spi.h"
+#include "fat16.h"
+#include "rc5.h"
 
 uint16_t	gData[8];
-
-// Variables
-u08 sharedmem[512];
-/*
-u08 rx_buf[RX_BUF_SIZE], rx_rdp=0, rx_wrp=0;	// RX buffer
-u08 flags=KEY_FLAG, dspd=0, state=STOP;	// Flags
-u16 tempo, new_ocr1a;	// Tempo memory
-u32 trk_len;	// Track length
-u32 time=0, delta_time=0;	// Deltatimes
-//u16 rtime;
-u08 time_min, time_sec, real_time=0, limit_count=RTC_SOFT_COUNT; // RTC
-s08 speed, transpose;
-*/
-u08 file_num=0, file_cnt=0;	// File
-u16 *file_pos;
 
 // タイマー通知
 ISR(TIMER2_OVF_vect)
@@ -176,7 +164,7 @@ ISR(USART0_UDRE_vect)
 // Pin Change Interrupt Request 1 
 ISR(PCINT1_vect)
 {
-	//gData[0]++;
+	gData[0]++;
 }
 
 void send(uint8_t data)
@@ -205,6 +193,15 @@ void note_off()
 	send(0x7B);
 }
 
+void error(uint8_t err) {
+	for (;;) {
+		gData[0] = err;
+		_delay_ms(100);
+		gData[0] = 0;
+		_delay_ms(100);
+	}	
+}
+
 int main(void)
 {
 	cli();
@@ -215,7 +212,7 @@ int main(void)
 
 	// 未接続(未使用)ピンは、ノイズ耐性向上のため'0'出力(GND接続状態)とします。
 	// MMCのため、SS(PB4),MOSI(PB5),MISO(PB6),SCK(PB7)を0
-	DDRB = 0x0E;
+	DDRB = 0xBE;
 	PORTB = 0x03;
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
@@ -236,11 +233,27 @@ int main(void)
 	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
 
 	// MMC/SDカード用の初期化処理
-	//MMC_hw_init();
-	//spi_init();
+//	MMC_hw_init();
+//	spi_init();
+	//rc5_init(RC5_ALL);
 
 	sei();
+/*
+	if (MMC_init()) {
+		lcd_string(DISP_OK, LINE_OK);
+		flags |= MMCOK_FLAG;
+	} else {
+		// mmc error
+	}
 
+	if (flags & MMCOK_FLAG) {
+		if (!fat_init()) {
+			error(1);
+		}
+		fat_count_files();
+		fat_read_filedata(file_num);
+	}
+*/
 	for (int8_t i = 0; i < 88; i++) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
@@ -269,7 +282,7 @@ int main(void)
 		_delay_ms(3);
 	}
 
-	// ピン変化割り込み
+	// ピン変化割り込み(赤外線リモコン受信許可)
 	PCICR = 1 << PCIE1;		// ポートB
 	PCMSK1 = 1 << PCINT8;	
 

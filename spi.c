@@ -27,6 +27,7 @@
 
 void spi_init(void){
 	// setup spi intrface
+/*
 #ifdef __AVR_ATmega8__
 	sbi(DDRB,PB2);
 	sbi(DDRB,PB3);
@@ -46,9 +47,18 @@ void spi_init(void){
 	sbi(DDRB, PB7);	// set SCK as output
 	cbi(PORTB, PB7);// set SCK lo
 #endif
+*/
+	sbi(DDRB, PB5);	// set MOSI a output
+	sbi(DDRB, PB4);	// SS must be output for Master mode to work
+	sbi(DDRB, PB7);	// set SCK as output
+	cbi(PORTB, PB7);// set SCK lo
 
-	outp(((1<<MSTR)|(1<<SPE)|(1<<SPR1) ), SPCR );	// enable SPI interface (8MHz/64=125kHz)
+	outp(((1<<MSTR)|(1<<SPE)|(1<<SPR1)), SPCR );	// enable SPI interface (8MHz/64=125kHz)
+	// MSTR(マスタ/スレーブ選択) '0':スレーブ,'1':マスタ
+	// SPE(SPIイネーブル)
+	// SPR1,SPR0 クロック・レート選択
 	SPSR |= 1;	// SPI2X -> 250kHz SPI-Clock
+	// 10MHzなので、SPIのクロックレートは、312.5kHzとなる。
 };
 
 u08 spi_io(u08 data){
