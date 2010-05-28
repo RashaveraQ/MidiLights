@@ -38,19 +38,7 @@
 #include "delay.h"
 #include "spi.h"
 #include "mmc.h"
-#ifndef LED_DISP
-	#include "lcd.h"
-#else
-	#define lcd_data(a) ;
-	#define lcd_setcur(a, b) ;
-	#define lcd_data(a) ;
-	#define lcd_string(a, b) ;
-	#define lcd_init() ;
-	#define lcd_hex_u08(a) ;
-	#define lcd_hex_u16(a) ;
-	#define lcd_number(a, b) ;
-	#define lcd_number_k(a) ;
-#endif
+#include "lcd.h"
 #include "fat16.h"
 
 #define MMC_CS_DDR	DDRB
@@ -81,8 +69,6 @@
 
 // starts the read process of a sector
 static void MMC_get_sec_start(u16 sectorh, u16 sectorl);
-// starts the read process of a part of a sector
-//static void MMC_get_part_sec_start(u16 sectorh, u16 sectorl, u16 offset, u16 length);
 // gets the next byte from the MMC card
 static u08 MMC_get_sec_next(void);
 // stop read process of a sector
@@ -92,9 +78,6 @@ static void MMC_get_sec_stop(void);
 inline static void MMC_CS_deselect(void);
 //selects the MMC for transmission
 inline static void MMC_CS_select(void);
-
-// sends receives a byte on the spi bus
-//static u08 MMC_io(u08 data);
 
 inline static void MMC_cleanup(void);
 
@@ -146,28 +129,6 @@ static u08 MMC_get_R1(void){
 	return retval;
 };
 
-// gets a 2 byte long R2
-/*static u16 MMC_get_R2(void){
-	u16 retval;
-	u08 max_errors = 64;
-	// wait for first valid response byte
-	do{
-		retval = spi_io(0xff);
-		max_errors--;
-	}while(  (retval & 0x80) && (max_errors>0) );
-	// move data to upper byte
-	retval = (retval << 8);
-	// get second byte;
-	max_errors = spi_io(0xff);
-	retval += max_errors;
-	return retval;
-};*/
-
-// sends the start data block token to the MMC
-/*static void MMC_send_start_data_token(void){
-  spi_io(MMC_START_TOKEN_SINGLE);
-};*/
-
 // waits for the card to send the start data block token
 static void MMC_wait_for_start_token(u08 max_errors){
   u08 retval;
@@ -179,10 +140,6 @@ static void MMC_wait_for_start_token(u08 max_errors){
   }while((retval != MMC_START_TOKEN_SINGLE) );
 };
 
-/*
-#define MMC_CS_select() cbi(MMC_CS_PORT, PIN_MMC_CS)
-#define MMC_CS_deselect() sbi(MMC_CS_PORT, PIN_MMC_CS)
-*/
 // selects the CS for spi xfer
 inline static void MMC_CS_select(void){
 	// pull down the MMC CS line
@@ -210,8 +167,6 @@ static void MMC_get_data(u08* ptr_data, u16 length){
   MMC_wait_for_start_token(128);
   while(length){
     *ptr_data = spi_io(0xff);
-    //USART_sendint(*ptr_data);
-	//USART_send(' ');
 	length--;
     ptr_data++;
   };
@@ -219,23 +174,6 @@ static void MMC_get_data(u08* ptr_data, u16 length){
   spi_io(0xff);
   spi_io(0xff);
 };
-
-
-// reads the CID reg from the card
-/*static void MMC_get_CID(u08 *ptr_data){
-  // select card
-	MMC_CS_select();
-	// tell the MMC card that we want to know its status
-	MMC_send_cmd(MMC_CMD_10_SEND_CID,0x0,0x0);
-	// get the response
-	MMC_get_R1();
-	// get the register data
-	MMC_get_data(ptr_data, 16);
-	// cleanup behind us
-	MMC_cleanup();
-};*/
-
-
 
 // reads the CSD reg from the card
 static void MMC_get_CSD(u08 *ptr_data){
@@ -315,7 +253,6 @@ u08 MMC_init(void){
 	// get the response
 	res = MMC_get_R1();
 
-	//if(res != 0x01) USART_sendstring("Error R1-init",0x01);
 	if(res != 0x01)
 		return 0;
 
@@ -344,10 +281,6 @@ u08 MMC_init(void){
 	SPSR &= ~1;	// SPI2X off
 
 	// find out some info on card
-#ifdef OLD_CARDSCAN
-	MMC_get_volume_info();
-#endif
-
 	MMC_set_blocklen(512);
 	mmc_open = 0;
 	return 1;
@@ -392,9 +325,6 @@ static void MMC_get_sec_stop(void){
 	}
 };
 
-
-#ifndef LED_DISP
-
 // starts the write process of a sector
 static void MMC_write_sec_start(u16 sectorh, u16 sectorl){
 	spi_io(0xff);
@@ -434,9 +364,6 @@ static void MMC_get_sec_stop_w(void){
 		mmc_open = 0;
 	}
 };
-#endif
-
-
 
 //-------------------------------------------------------------
 // High Level MMC-Funktionen
@@ -445,9 +372,6 @@ u32 sect;
 u16 bufpos=0;
 
 extern u08 flags, fat_directaccess;
-#ifdef OLD_CARDSCAN
-	#define FAT_FLAG 0x20
-#endif
 
 void mmc_read_sector(u32 s, u08 *buf) {
 	u16 i;
@@ -469,11 +393,7 @@ void mmc_load_start(u32 s) {
 u08 mmc_fetch_byte(void) {
 	if (bufpos == 512) {
 		MMC_get_sec_stop();
-#ifdef OLD_CARDSCAN
-		if (flags & FAT_FLAG && !fat_directaccess)
-#else
 		if (!fat_directaccess)
-#endif
 			fat_getnextsector();
 		else
 			sect++;
@@ -501,9 +421,6 @@ void mmc_read_block(u08 *buf, u16 cnt) {
 	}
 }
 
-
-#ifndef LED_DISP
-
 void mmc_write_sector(u32 s, u08 *buf) {
 	u16 i;
 	MMC_write_sec_start((u16)(s>>16), (u16)(s));
@@ -519,16 +436,11 @@ void mmc_write_start(u32 s) {
 	bufpos = 0;
 }
 
-
 // Byte schreiben
 void mmc_write_byte(u08 b) {
 	if (bufpos == 512) {
 		MMC_get_sec_stop_w();
-#ifdef OLD_CARDSCAN
-		if (flags & FAT_FLAG && !fat_directaccess)
-#else
 		if (!fat_directaccess)
-#endif
 			fat_getnextsector();
 		else
 			sect++;
@@ -555,8 +467,6 @@ void mmc_write_block(u08 *buf, u16 cnt) {
 		buf++;
 	}
 }
-#endif
-
 
 // Daten vergleichen
 u08 mmc_compare_string(u08 *buf, u08 len) {
@@ -567,61 +477,3 @@ u08 mmc_compare_string(u08 *buf, u08 len) {
 	}
 	return 1;
 }
-
-#ifndef LED_DISP
-
-#ifdef OLD_CARDSCAN
-
-extern u08 file_cnt;
-extern u16 *file_pos;
-extern u16 last;
-
-// Mididateien z‰hlen
-void mmc_count_files(u16 start) {
-	u32 anz_s;
-	u16 s, i;
-	u08 cnt=0;	// Sektorskip-Z‰hler
-
-	last = start;
-	lcd_setcur(BOOTFNUM_X, BOOTFNUM_Y);
-	lcd_number(file_cnt, 1);	// Anzeige Anzahl gefundene Dateien Start
-
-	for (s=start; s<last_sector; s++) {
-		lcd_setcur(BOOTSECT_X, BOOTSECT_Y);
-		lcd_hex_u16(s);	// Anzeige Sektornummer in Echtzeit
-		mmc_load_start(s);
-		if (mmc_compare_string("MThd", 4)) {	// Sektor anschauen: Ist es der Anfang einer Mididatei?
-			file_pos[file_cnt] = s;		// Mididatei merken
-			file_cnt++;
-			lcd_setcur(BOOTFNUM_X, BOOTFNUM_Y);
-			lcd_number(file_cnt, 1);	// Anzeige Anzahl gefundene Dateien in Echtzeit
-			cnt = 0;
-			if (mmc_fetch_byte() == 0xff)	// Ist es eine von MrMidi2 aufgezeichnete Datei?
-				for (i=0; i<499; i++)	// Vorspulen bis zum tats‰chlichen Header
-					mmc_fetch_byte();
-			else
-				for (i=0; i<9; i++)
-					mmc_fetch_byte();
-			if (mmc_compare_string("MTrk", 4)) {
-				anz_s = (u32)mmc_fetch_byte() << 24;	// L‰nge der Datei aus dem Trackheader lesen
-				anz_s |= (u32)mmc_fetch_byte() << 16;
-				anz_s |= (u32)mmc_fetch_byte() << 8;
-				anz_s |= (u32)mmc_fetch_byte();
-				s += (u16)((u32)(anz_s+8+6+8-1) >> 9);	// Letzten Sektor der Datei berechnen (spart Suchzeit)
-				last = s + 1;	// Eventuell freier Sektor
-			}
-		}
-		else if (file_cnt || s>2000 || (((u08)(~PIND)>>2)&0x3f)) {	// Sollte es keine Mididatei sein
-			if (cnt == 16) {	// Skipz‰hler: 16 nicht-Midi-Sektoren fÅEren zur Endeerkennung
-				mmc_complete_read();
-				break;
-			}
-			else
-				cnt++;
-		}
-		mmc_complete_read();
-	}
-}
-#endif
-
-#endif

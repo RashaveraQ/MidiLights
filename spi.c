@@ -28,19 +28,6 @@
 void spi_init(void){
 	// setup spi intrface
 /*
-#ifdef __AVR_ATmega8__
-	sbi(DDRB,PB2);
-	sbi(DDRB,PB3);
-	cbi(PORTB,PB5);
-	sbi(DDRB,PB5);
-#endif
-#ifdef __AVR_ATmega168__
-	sbi(DDRB,PB2);
-	sbi(DDRB,PB3);
-	cbi(PORTB,PB5);
-	sbi(DDRB,PB5);
-#endif
-
 #ifdef __AVR_ATmega32__
 	sbi(DDRB, PB5);	// set MOSI a output
 	sbi(DDRB, PB4);	// SS must be output for Master mode to work

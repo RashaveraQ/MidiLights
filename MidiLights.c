@@ -282,8 +282,9 @@ int main(void)
 	PCICR = 1 << PCIE1;		// ƒ|[ƒgB
 	PCMSK1 = 1 << PCINT8;	
 
-	//main2();
-
+#if 1
+	main2();
+#else
 	for (;;) {
 /*
 		for (int8_t i = 0; i < 88; i++) {
@@ -308,5 +309,5 @@ int main(void)
 */
 		_delay_ms(5000);
 	}
-
+#endif
 }

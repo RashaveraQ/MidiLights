@@ -4,21 +4,17 @@
 
 // RTC-Typen
 #define RTC4513
-//#define DUMMY
 
 // Port
 #define CLOCK_PORT		PORTB
 #define CLOCK_CS_PIN	0x40
 
-#ifdef RTC4513
-	#define CLOCK_PIN		PINB
-	#define CLOCK_DDR		DDRB
-	#define CLOCK_DATA_PIN	0x10
-	#define CLOCK_SCK_PIN	0x20
-#endif
+#define CLOCK_PIN		PINB
+#define CLOCK_DDR		DDRB
+#define CLOCK_DATA_PIN	0x10
+#define CLOCK_SCK_PIN	0x20
 
 // Register
-#ifdef RTC4513
 #define MODE_WRITE	0x03
 #define MODE_READ	0x0c
 
@@ -40,27 +36,18 @@ enum {
 	REG_CE,
 	REG_CF
 };
-#endif
-
-#ifdef DUMMY
-#define CMD_CLOCKSTART	0x10
-#define CMD_CLOCKHALT	0x11
-#define CMD_CLOCK24H	0x18
-#define CMD_CLOCKREAD	0x20
-#define CMD_CLOCKSET	0x21
-#endif
 
 // Vars
 struct time_st {
 	u08 gl_sek, gl_min, gl_std, gl_tag, gl_mon, gl_jahr;
 } gl_time;
 
-	#define gl_sek gl_time.gl_sek
-	#define gl_min gl_time.gl_min
-	#define gl_std gl_time.gl_std
-	#define gl_tag gl_time.gl_tag
-	#define gl_mon gl_time.gl_mon
-	#define gl_jahr gl_time.gl_jahr
+#define gl_sek gl_time.gl_sek
+#define gl_min gl_time.gl_min
+#define gl_std gl_time.gl_std
+#define gl_tag gl_time.gl_tag
+#define gl_mon gl_time.gl_mon
+#define gl_jahr gl_time.gl_jahr
 
 const u08 TAGE_IM_MONAT[12] = {
 	31,29,31,30,31,30,31,31,30,31,30,31
@@ -73,36 +60,10 @@ inline static void clock_cs_low(void) {
 
 
 inline static void clock_cs_high(void) {
-#ifdef RTC4513
 	CLOCK_PORT &= ~(CLOCK_DATA_PIN | CLOCK_SCK_PIN);
-#endif
 	CLOCK_PORT |= CLOCK_CS_PIN;
 }
 
-
-/*
-inline static u08 clock_calcwtag(void) {
-	u08 mon=gl_mon, jahr=gl_jahr, jh=20;
-	if (mon < 3) {
-		jahr--;
-		mon += 12;
-	}
-	if (jahr >= 100) {
-		jh = 21;
-		jahr -= 100;
-	}
-	mon = gl_tag + (u08)(mon+1)*(u08)13/(u08)5 + jahr + (jahr>>2) + (jh>>2) + 5;
-	jh <<= 1;
-	while (jh > mon)
-		mon += 7;
-	mon -= jh;
-	while (mon > 6)
-		mon -= 7;
-	return mon;
-}
-*/
-
-#ifdef RTC4513
 static void write_nibble(u08 b) {
 	u08 i;
 	CLOCK_DDR |= CLOCK_DATA_PIN;
@@ -157,12 +118,10 @@ static u08 div_u08(u08 *z, u08 d) {
 	}
 	return e;
 }
-#endif
 	
 
 void read_time(void)
 {
-#ifdef RTC4513
 	u08 temp, i, dia;
 	do {
 		dia = 0;
@@ -196,23 +155,11 @@ void read_time(void)
 		clock_cs_low();
 	}
 	while (dia);
-#endif
-	
-#ifdef DUMMY
-	u08 temp=0xff, i, *p;
-	clock_cs_low();
-	spi_io(CMD_CLOCKREAD);
-	p = (u08 *)gl_time.gl_sek;
-	for (i=0; i<sizeof(gl_time); i++)
-		*p++ = spi_io(temp);
-	clock_cs_high();
-#endif
 }
 
 
 void set_time(void)
 {
-#ifdef RTC4513
 	u08 temp, i;
 	write_data(REG_CF, 0x07); // Reset
 	clock_cs_low();
@@ -237,33 +184,10 @@ void set_time(void)
 	clock_cs_low();
 	write_data(REG_CD, 0x02);
 	clock_cs_low();
-#endif
-	
-#ifdef DUMMY
-	u08 i, *p;
-	clock_cs_low();
-	spi_io(CMD_CLOCKHALT);
-	clock_cs_high();
-	clock_cs_low();
-	spi_io(CMD_CLOCK24H);
-	clock_cs_high();
-	clock_cs_low();
-	spi_io(CMD_CLOCKSET);
-	p = (u08 *)gl_time.gl_sek;
-	for (i=0; i<sizeof(gl_time); i++)
-		spi_io(*p++);
-//	spi_io(clock_calcwtag());
-	spi_io(0);
-	clock_cs_high();
-	clock_cs_low();
-	spi_io(CMD_CLOCKSTART);
-	clock_cs_high();
-#endif
 }
 
 void set_date(void)
 {
-#ifdef RTC4513
 	u08 temp, i;
 	temp = gl_tag;
 	i = div_u08(&temp, 10);
@@ -278,5 +202,4 @@ void set_date(void)
 	write_nibble(temp);
 	write_nibble(i);
 	clock_cs_low();
-#endif
 }

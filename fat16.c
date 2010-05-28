@@ -1,46 +1,22 @@
 #include "types.h"
 #include "mrmidi2.h"
 #include "mmc.h"
-#ifndef LED_DISP
-	#include "lcd.h"
-#else
-	#define lcd_data(a) ;
-	#define lcd_setcur(a, b) ;
-	#define lcd_data(a) ;
-	#define lcd_string(a, b) ;
-	#define lcd_init() ;
-	#define lcd_hex_u08(a) ;
-	#define lcd_hex_u16(a) ;
-	#define lcd_number(a, b) ;
-	#define lcd_number_k(a) ;
-#endif
+#include "lcd.h"
 #include "delay.h"
 #include "fat16.h"
-#ifdef USE_RTC
-    #include "clock.h"
-#else
-	#include <avr/pgmspace.h>
-#endif
+#include <avr/pgmspace.h>
 
 struct fat_filedata_st fat_filedata;
 static u16 fat_pos, fat_size, file_pos, root_pos, sect_offs, last_rdsect=0, clcnt, startfatoffs, startfatcnt;
 static u08 cluster_size, fat_cnt, last_rdoffs, maxfilenum=0;
 u08 filemode=0, fat_directaccess=0;
 
-#ifdef USE_RTC
-    struct time_st {
-        u08 gl_sek, gl_min, gl_std, gl_tag, gl_mon, gl_jahr;
-    };
-    extern struct time_st gl_time;
-#endif
 extern unsigned char sharedmem[];
 extern u16 file_cnt, bufpos;
 extern u32 sect;
 
-#ifndef USE_RTC
 prog_uchar FILEENTRY[32-11-4-2] = {
 0x20, 0x00, 0xc2, 0xb3, 0x92, 0x84, 0x36, 0x84, 0x36, 0,0, 0x91, 0x92, 0x84, 0x36};
-#endif
 
 //Block Size in Bytes
 #define BlockSize			512
@@ -126,26 +102,6 @@ struct DirEntry_st {
 	u32	DIR_FileSize;
 };
 
-
-#ifdef USE_RTC
-
-/** Generiert Format der FAT-Zeit.
-*/
-inline static u16 fat_maketime(void)
-{
-    return (gl_time.gl_sek>>1) | ((u16)gl_time.gl_min<<5) | ((u16)gl_time.gl_std<<11);
-}
-
-
-/** Generiert Format des FAT-Datums.
-*/
-inline static u16 fat_makedate(void)
-{
-    return (gl_time.gl_tag) | ((u16)gl_time.gl_mon<<5) | ((u16)(gl_time.gl_jahr+20)<<9);
-}
-#endif
-
-
 /** Calc Cluster from given Sector
     @param Sector
     @return Cluster
@@ -183,19 +139,16 @@ static u32 cluster2sector(u16 c) {
     @param line number [0,1]
 */
 void print_filename(u08 y) {
-#ifndef LED_DISP
 	u08 i;
 	lcd_setcur(0, y);
 	for (i=0; i<LINESIZE; i++)
 		lcd_data(fat_filedata.name[i]);
-#endif
 }
 
 
 /** Print Filesize on Display
 */
 void print_filesize(void) {
-#ifndef LED_DISP
 	lcd_setcur(FSIZE_X, FSIZE_Y);
 	if (fat_filedata.len < 10000)
 		lcd_number_k(fat_filedata.len);
@@ -203,7 +156,6 @@ void print_filesize(void) {
 		lcd_number(fat_filedata.len>>10, 1);
 		lcd_data('k');
 	}
-#endif
 }
 
 
@@ -391,11 +343,7 @@ void fat_count_files(void) {
 				cli();
 				TCNT1 = fat_filedata.startsect;
 				OCR1A = ((fat_filedata.len-1)>>9)+1;
-#ifdef OLD_BL
 				asm volatile("call 0x3902");
-#else
-				asm volatile("call 0x3E68");
-#endif
 				while (1);
 			}
 		}
@@ -417,7 +365,6 @@ void fat_count_files(void) {
 */
 
 void fat_delete_file(void) {
-#ifndef LED_DISP
 	u16 startcl = sector2cluster(fat_filedata.startsect);	// Rechnet den Cluster der zu löschenden Datei aus
 	u16 fatsect, fatcl, nfatsect;
 	u08 offscl, i;
@@ -469,7 +416,6 @@ void fat_delete_file(void) {
 	}
 	mmc_write_sector(fatsect, sharedmem);
 	fat_directaccess = 0;
-#endif
 }
 
 
@@ -478,7 +424,6 @@ void fat_delete_file(void) {
     @param (IN) Number
 */
 static void wrstr(unsigned char *s, unsigned char d) {
-#ifndef LED_DISP
 	u08 zehner=0, hunderter=0;
 	while (d >= 100) {
 		d -= 100;
@@ -491,7 +436,6 @@ static void wrstr(unsigned char *s, unsigned char d) {
 	*s = hunderter+'0'; s++;
 	*s = zehner+'0'; s++;
 	*s = d+'0';
-#endif
 }
 
 
@@ -499,13 +443,9 @@ static void wrstr(unsigned char *s, unsigned char d) {
     Uses information from global struct fat_filedata
 */
 void fat_new_file(void) {
-#ifndef LED_DISP
 	u16 startcl = sector2cluster(fat_filedata.startsect);	// Rechnet den Cluster der zu erstellenden Datei aus
 	u16 fatsect, fatcl, lastfs, cnt;
 	u08 offscl, i, lastco, dirty;
-#ifdef USE_RTC
-	struct DirEntry_st *modentry;
-#endif
 
 	fat_directaccess = 1;
 	fat_filedata.name[0] = 'M';
@@ -526,32 +466,6 @@ void fat_new_file(void) {
 	fatsect = last_rdsect;
 	mmc_read_sector(fatsect, sharedmem);	// Betroffenen Rootdirsektor laden
     offscl = last_rdoffs;
-#ifdef USE_RTC
-	modentry = (struct DirEntry_st *)sharedmem[offscl*32];
-    for (i=0; i<11; i++)
-        modentry->DIR_Name[i] = fat_filedata.name[i];
-	modentry->DIR_Attr = ATTR_ARCHIVE;
-	modentry->DIR_NTRes = 0;
-//#ifdef USE_RTC
-	read_time();
-    i = 0;
-    if (gl_time.gl_sek&1)
-        i = 100;
-	modentry->DIR_CrtTimeTenth = i;
-    modentry->DIR_CrtTime = fat_maketime();
-	modentry->DIR_CrtDate = fat_makedate();
-/*#else
-    modentry->DIR_CrtTimeTenth = 0;
-    modentry->DIR_CrtTime = (0) | (0<<5) | (12<<11);
-    modentry->DIR_CrtDate = (5) | (9<<5) | (7<<9);
-#endif*/
-    modentry->DIR_LastAccDate = modentry->DIR_CrtDate;
-    modentry->DIR_FstClusHI = 0;
-    modentry->DIR_WrtTime = modentry->DIR_CrtTime;
-    modentry->DIR_WrtDate = modentry->DIR_CrtDate;
-    modentry->DIR_FstClusLO = startcl;
-	modentry->DIR_FileSize = fat_filedata.len;
-#else
 	for (i=0; i<11; i++)
 		sharedmem[offscl*32+i] = fat_filedata.name[i];
 	for (i=0; i<15; i++)
@@ -562,7 +476,6 @@ void fat_new_file(void) {
 	sharedmem[offscl*32+28] = (u08)fat_filedata.len;
 	sharedmem[offscl*32+27] = (u08)(startcl >> 8);
 	sharedmem[offscl*32+26] = (u08)startcl;
-#endif
 	mmc_write_sector(fatsect, sharedmem);
 
 	last_rdoffs++;
@@ -631,7 +544,6 @@ void fat_new_file(void) {
 		mmc_write_sector(fatsect, sharedmem);	// geänderten FAT-Sektor wegschreiben
 	}
 	fat_directaccess = 0;
-#endif
 }
 
 
@@ -663,8 +575,6 @@ static u16 find_free_cluster(void) {
 			fatsect++;
 			startfatoffs++;
 			startfatcnt = pcnt;
-//			if (fatsect == root_pos)	// Volle Karte!
-//				return -1;
 			fat_directaccess = 1;
 			mmc_read_sector(fatsect, sharedmem);	// FAT-Sektor lesen
 			fat_directaccess = 0;
@@ -758,11 +668,7 @@ u08 fat_getnextsector(void)
 			return 1;
 		}
 		clcnt++;
-#ifdef NOSECTORSEARCH
-		sect++;
-#else
 		sect = cluster2sector(find_free_cluster());
-#endif
 	}
 	return 0;
 }

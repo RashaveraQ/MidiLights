@@ -19,7 +19,7 @@ rc5_t rc5;
 /* ******************************************************************************** */
 
 #ifndef F_CPU
-	#define F_CPU 8000000
+	#define F_CPU 10000000
 #endif /* !F_CPU */
 
 /* µs for a whole bit of RC5 (first & second part) */
@@ -33,8 +33,8 @@ rc5_t rc5;
         
 typedef union 
 {
-        uint16_t w;
-        uint8_t  b[2];
+	uint16_t w;
+	uint8_t  b[2];
 } code_t;
 
 static code_t code;
@@ -49,33 +49,20 @@ static uint8_t nint;
         
 void rc5_init (uint8_t addr)
 {
-        nint  = 0;
-        nbits = 0;
-        rc5.flip = -1;
-        
-        rc5_addr = addr;
+	nint  = 0;
+	nbits = 0;
+	rc5.flip = -1;
+	rc5_addr = addr;
         
 #if (RC5_PRESCALE==1024)
-  #ifdef __AVR_ATmega168__
-  		TCCR0A = 0;
-  		TCCR0B = (1 << CS02) | (1 << CS00);
-  #else
-        TCCR0 = (1 << CS02) | (1 << CS00);
-  #endif
+	TCCR0A = 0;
+	TCCR0B = (1 << CS02) | (1 << CS00);
 #elif   (RC5_PRESCALE==256)
-  #ifdef __AVR_ATmega168__
-  		TCCR0A = 0;
-  		TCCR0B = (1 << CS02);
-  #else
-        TCCR0 = (1 << CS02);
-  #endif
+	TCCR0A = 0;
+	TCCR0B = (1 << CS02);
 #elif   (RC5_PRESCALE==64)
-  #ifdef __AVR_ATmega168__
-  		TCCR0A = 0;
-        TCCR0B = (1 << CS01) | (1 << CS00);
-  #else
-        TCCR0 = (1 << CS01) | (1 << CS00);
-  #endif
+	TCCR0A = 0;
+	TCCR0B = (1 << CS01) | (1 << CS00);
 #else
   #error This RC5_PRESCALE is not supported
 #endif /* RC5_PRESCALE */
@@ -84,25 +71,13 @@ void rc5_init (uint8_t addr)
         /* clear pending INTx */
         /* enable INTx interrupt */
 #if (RC5_INT == RC5_INT0)               
-  #ifdef __AVR_ATmega168__
-  		EICRA = 0x02;
-		EIFR = 0x01;
-		EIMSK |= 1;
-  #else
-        MCUCR = (MCUCR | (1 << ISC01)) & ~ (1 << ISC00);
-        GIFR = (1 << INTF0);
-        GICR |= (1 << INT0);
-  #endif
+	EICRA = 0x02;
+	EIFR = 0x01;
+	EIMSK |= 1;
 #elif (RC5_INT == RC5_INT1)             
-  #ifdef __AVR_ATmega168__
-  		EICRA = 0x02<<2;
-		EIFR = 0x01<<1;
-		EIMSK |= 1<<1;
-  #else
-        MCUCR = (MCUCR | (1 << ISC11)) & ~ (1 << ISC10);
-        GIFR = (1 << INTF1);
-        GICR |= (1 << INT1);
-  #endif
+	EICRA = 0x02<<2;
+	EIFR = 0x01<<1;
+	EIMSK |= 1<<1;
 #else
   #error please define RC5_INT
 #endif /* RC5_INT */
@@ -112,70 +87,50 @@ void rc5_init (uint8_t addr)
 
 ISR(SIG_OVERFLOW0)
 {
-#ifdef __AVR_ATmega168__
-        TIMSK0 &= ~1;
-#else
-        TIMSK &= ~(1 << TOIE0);
-#endif
-        
-        uint8_t _nbits = nbits;
-        code_t _code = code;
-        
-        if (26 == _nbits)
-        {
-                _nbits++;
-                _code.w <<= 1;
-        }
-        
-        if (27 == _nbits 
-                && _code.b[1] >= 0x30 /* AGC == 3 */
-                && 0 > rc5.flip)
-        {
-                uint8_t _rc5_code;
-                uint8_t _rc5_addr;
-                /* we do the bit manipulation stuff by hand, because of code size */
-                _rc5_code = _code.b[0] & 0x3f; /* 0b00111111 : #0..#5 */
-                _code.w <<= 2;
-                _rc5_addr = _code.b[1] & 0x1f; /* 0b00011111 : #6..#10 */
-                
-                if (rc5_addr & 0x80
-                        || rc5_addr == _rc5_addr)
-                {
-                        rc5.code = _rc5_code;
-                        rc5.addr = _rc5_addr;
-                        signed char flip = 0;
-                        if (_code.b[1] & 0x20) /* 0b00100000 : #11 */
-                                flip = 1;
-                        rc5.flip = flip;
-                }
-        }
-        
-        nint = 0;
-        nbits = 0;
-        
-        /* INTx on falling edge */
-        /* clear pending INTx */
-        /* enable INTx interrupt */
+	TIMSK0 &= ~1;
+
+	uint8_t _nbits = nbits;
+	code_t _code = code;
+
+	if (26 == _nbits) {
+		_nbits++;
+		_code.w <<= 1;
+	}
+
+	if (27 == _nbits && _code.b[1] >= 0x30 /* AGC == 3 */
+        && 0 > rc5.flip)
+	{
+		uint8_t _rc5_code;
+		uint8_t _rc5_addr;
+		/* we do the bit manipulation stuff by hand, because of code size */
+		_rc5_code = _code.b[0] & 0x3f; /* 0b00111111 : #0..#5 */
+		_code.w <<= 2;
+		_rc5_addr = _code.b[1] & 0x1f; /* 0b00011111 : #6..#10 */
+
+		if (rc5_addr & 0x80 || rc5_addr == _rc5_addr) {
+			rc5.code = _rc5_code;
+			rc5.addr = _rc5_addr;
+			signed char flip = 0;
+			if (_code.b[1] & 0x20) /* 0b00100000 : #11 */
+				flip = 1;
+			rc5.flip = flip;
+		}
+	}
+
+	nint = 0;
+	nbits = 0;
+
+	/* INTx on falling edge */
+	/* clear pending INTx */
+	/* enable INTx interrupt */
 #if (RC5_INT == RC5_INT0)               
-  #ifdef __AVR_ATmega168__
-  		EICRA = 0x02;
-		EIFR = 0x01;
-		EIMSK |= 1;
-  #else
-        MCUCR = (MCUCR | (1 << ISC01)) & ~ (1 << ISC00);
-        GIFR = (1 << INTF0);
-        GICR |= (1 << INT0);
-  #endif
+	EICRA = 0x02;
+	EIFR = 0x01;
+	EIMSK |= 1;
 #elif (RC5_INT == RC5_INT1)             
-  #ifdef __AVR_ATmega168__
-  		EICRA = 0x02<<2;
-		EIFR = 0x01<<1;
-		EIMSK |= 1<<1;
-  #else
-        MCUCR = (MCUCR | (1 << ISC11)) & ~ (1 << ISC10);
-        GIFR = (1 << INTF1);
-        GICR |= (1 << INT1);
-  #endif
+	EICRA = 0x02<<2;
+	EIFR = 0x01<<1;
+	EIMSK |= 1<<1;
 #endif
 }
 
@@ -197,26 +152,13 @@ ISR(SIG_INTERRUPT1)
         {
                 /* INTx on both edges */
 #if (RC5_INT == RC5_INT0)
-  #ifdef __AVR_ATmega168__
   				EICRA = 0x01;
-  #else
-                MCUCR = (MCUCR | (1 << ISC00)) & ~ (1 << ISC01);
-  #endif
 #elif (RC5_INT == RC5_INT1)             
-  #ifdef __AVR_ATmega168__
   				EICRA = 0x01<<2;
-  #else
-                MCUCR = (MCUCR | (1 << ISC10)) & ~ (1 << ISC11);
-  #endif
 #endif /* RC5_INT */
         
-  #ifdef __AVR_ATmega168__
                 TIFR0 = 1;
                 TIMSK0 = 1;
-  #else
-                TIFR = (1 << TOV0);
-                TIMSK |= (1 << TOIE0);
-  #endif
                 _code.w = 0;
         }
         else
@@ -255,17 +197,9 @@ ISR(SIG_INTERRUPT1)
                         
                         /* disable INTx, run into Overflow0 */
 #if (RC5_INT == RC5_INT0)               
-  #ifdef __AVR_ATmega168__
   						EIMSK &= ~1;
-  #else
-                        GICR &= ~(1 << INT0);
-  #endif
 #elif (RC5_INT == RC5_INT1)             
-  #ifdef __AVR_ATmega168__
   						EIMSK &= ~2;
-  #else
-                        GICR &= ~(1 << INT1);
-  #endif
 #endif /* RC5_INT */
 
                         _nbits = 0;
