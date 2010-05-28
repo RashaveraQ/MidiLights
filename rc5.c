@@ -71,9 +71,9 @@ void rc5_init (uint8_t addr)
         /* clear pending INTx */
         /* enable INTx interrupt */
 #if (RC5_INT == RC5_INT0)               
-	EICRA = 0x02;
-	EIFR = 0x01;
-	EIMSK |= 1;
+	EICRA = 0x02;	// ŠO•”Š„‚è‚İ‚O INT0 ‚ª HIGH ¨ LOW
+	EIFR = 0x01;	// 
+	EIMSK |= 1;		// ŠO•”Š„‚è‚İ‚O‹–‰Â
 #elif (RC5_INT == RC5_INT1)             
 	EICRA = 0x02<<2;
 	EIFR = 0x01<<1;

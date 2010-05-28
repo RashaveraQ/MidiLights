@@ -16,12 +16,9 @@ ISR(TIMER2_OVF_vect)
 
 	PORTA = 0;	// LEDの電源OFF
 
-//	PORTD = 0x03 | ~(gData[sLedPowerBit] << 1);
-	PORTD &= 0x03;
-	PORTD |= 0xFC & (~(gData[sLedPowerBit] << 1));
-	PORTB &= 0xFD;
-	PORTB |= 0x02 & ~(gData[sLedPowerBit] << 1);
-	PORTC = (0x03 & ~(gData[sLedPowerBit] >> 7)) | (0xC0 & ~(gData[sLedPowerBit] >> 3));
+	PORTC = 0xFF & ~(gData[sLedPowerBit]);
+	PORTD &= 0x1F;
+	PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
 
 	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
 
@@ -157,8 +154,8 @@ ISR(USART0_UDRE_vect)
 {
 }
 
-// Pin Change Interrupt Request 1 
-ISR(PCINT1_vect)
+// Pin Change Interrupt Request 3
+ISR(PCINT3_vect)
 {
 	gData[0]++;
 }
@@ -208,16 +205,16 @@ int main(void)
 
 	// 未接続(未使用)ピンは、ノイズ耐性向上のため'0'出力(GND接続状態)とします。
 	// MMCのため、SS(PB4),MOSI(PB5),MISO(PB6),SCK(PB7)を0
-	DDRB = 0xBE;
-	PORTB = 0x03;
+	DDRB = 0xBF;
+	PORTB = 0x00;
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
 	DDRC = 0xFF;
-	PORTC = 0xC3;
+	PORTC = 0xFF;
 
-	// D0は、MIDI入力
+	// D0は、MIDI入力。D1は、MIDI出力。D2は、赤外線リモコン受信用外部割り込み
 	// D1-D7は、LEDの制御スイッチ
-	DDRD = 0xFE;
+	DDRD = 0xFA;
 	PORTD = 0xFF;
 
 	// タイマ設定
@@ -279,10 +276,10 @@ int main(void)
 	}
 
 	// ピン変化割り込み(赤外線リモコン受信許可)
-	PCICR = 1 << PCIE1;		// ポートB
-	PCMSK1 = 1 << PCINT8;	
+	PCICR = 1 << PCIE3;		// ポートD
+	PCMSK3 = 1 << PCINT26;	
 
-#if 1
+#if 0
 	main2();
 #else
 	for (;;) {

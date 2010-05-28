@@ -37,7 +37,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = MidiLights.o fat16.o mmc.o rc5.o spi.o clock.o delay.o lcd.o main.o 
+OBJECTS = MidiLights.o fat16.o mmc.o rc5.o spi.o delay.o lcd.o main.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -59,9 +59,6 @@ rc5.o: ../rc5.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 spi.o: ../spi.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-clock.o: ../clock.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 delay.o: ../delay.c

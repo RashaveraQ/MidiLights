@@ -77,8 +77,8 @@ available on www.mikrocontroller.net!
 #define MAX_DECAY	7
 
 // Buttons
-#define KEY_PORT	PIND
-#define KEY_PORT2	PINB
+//#define KEY_PORT	PIND	// akashi
+//#define KEY_PORT2	PINB	// akashi
 
 #define KEY_MASK	0xf8
 #define KEY_PLAY	0x80
@@ -240,25 +240,16 @@ static void hw_init(void) {
 	// Oscillator
 
 	// Ports
-	DDRC = 0x3F;	// LCD
-	PORTC = 0x00;
-	lcd_init();
 	lcd_string(DISP_MAIN, LINE_MAIN);
 	lcd_string(DISP_MIDICTR, LINE_BOOT);
 	delay_ms(1024);
 
-	DDRB = 0xC0;	// MMC
-	PORTB = 0xFF;
-
-	DDRD = 0x02;	// Input-Port, außer TxD
-	PORTD = 0xFF;	// Pull-Ups aktivieren
-
 	// UART
 	// Hilfsmakro zur UBRR-Berechnung ("Formel" laut Datenblatt)
-	#define UART_UBRR_CALC(BAUD_,FREQ_) ((FREQ_)/((BAUD_)*16L)-1)
-	UBRRH = (uint8_t)(UART_UBRR_CALC(UART_BAUD_RATE,F_CPU)>>8);
-	UBRRL = (uint8_t)UART_UBRR_CALC(UART_BAUD_RATE,F_CPU);
-	UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE);
+	//#define UART_UBRR_CALC(BAUD_,FREQ_) ((FREQ_)/((BAUD_)*16L)-1)
+	//UBRRH = (uint8_t)(UART_UBRR_CALC(UART_BAUD_RATE,F_CPU)>>8);
+	//UBRRL = (uint8_t)UART_UBRR_CALC(UART_BAUD_RATE,F_CPU);
+	//UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE);
 	// Midi device silence
 
 	// Read parameters from EEPROM
@@ -698,7 +689,9 @@ static void key_detect(void) {
 	static u08 ok=0, wur=0;
 	static u08 kpt=0, krc=0;//!
 	u08 lwur=0;
-	u08 k = ((u08)(~KEY_PORT)&KEY_MASK) | ((u08)(~KEY_PORT2)&KEY_MASK2);
+
+	u08 k = /* ((u08)(~KEY_PORT)&KEY_MASK) | ((u08)(~KEY_PORT2)&KEY_MASK2) */ 0x00;	// akashi
+
 	if ((k&KEY_NEXT) && (k&KEY_LAST)) {
 		k = RC5_CODE_MENU; lwur=1;
 	}
