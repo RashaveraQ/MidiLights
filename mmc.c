@@ -34,7 +34,7 @@
 #include <avr/interrupt.h>
 
 #include "types.h"
-//#include "mrmidi2.h"
+#include "mrmidi2.h"
 #include "delay.h"
 #include "spi.h"
 #include "mmc.h"
@@ -302,7 +302,6 @@ void MMC_hw_init(void){
 u08 MMC_init(void){
 	u08 i;
 	u08 res;
-	
 	// the data sheet says that the MMC needs 74 clock pulses to startup
 	// 10*8== 80; 80>76
 	for( i = 0; i < 100; i++){
@@ -613,7 +612,7 @@ void mmc_count_files(u16 start) {
 			}
 		}
 		else if (file_cnt || s>2000 || (((u08)(~PIND)>>2)&0x3f)) {	// Sollte es keine Mididatei sein
-			if (cnt == 16) {	// Skipzähler: 16 nicht-Midi-Sektoren führen zur Endeerkennung
+			if (cnt == 16) {	// Skipzähler: 16 nicht-Midi-Sektoren fEren zur Endeerkennung
 				mmc_complete_read();
 				break;
 			}

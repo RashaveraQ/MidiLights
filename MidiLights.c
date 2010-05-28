@@ -3,13 +3,9 @@
 #define F_CPU 10000000UL
 #include <util/delay.h>
 #include <stdint.h>
-//#include <stdlib.h>
+#include <stdlib.h>
 
-#include "lcd.h"
-#include "mmc.h"
-#include "spi.h"
-#include "fat16.h"
-#include "rc5.h"
+void main2(void);
 
 uint16_t	gData[8];
 
@@ -286,6 +282,8 @@ int main(void)
 	PCICR = 1 << PCIE1;		// ƒ|[ƒgB
 	PCMSK1 = 1 << PCINT8;	
 
+	//main2();
+
 	for (;;) {
 /*
 		for (int8_t i = 0; i < 88; i++) {
@@ -310,4 +308,5 @@ int main(void)
 */
 		_delay_ms(5000);
 	}
+
 }

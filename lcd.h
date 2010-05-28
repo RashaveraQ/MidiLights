@@ -2,7 +2,7 @@
 #define _LCD_H_
 
 #include "types.h"
-//#include "mrmidi2.h"
+#include "mrmidi2.h"
 
 // Text
 enum display_strings_e{

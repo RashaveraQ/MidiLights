@@ -1,5 +1,5 @@
 #include "types.h"
-//#include "mrmidi2.h"
+#include "mrmidi2.h"
 #include "mmc.h"
 #ifndef LED_DISP
 	#include "lcd.h"
@@ -241,7 +241,7 @@ u08 fat_init(void) {
 
 	mmc_read_sector(MASTER_BOOT_RECORD_SECTOR, sharedmem); // MBR lesen
 	sect_offs = sharedmem[VBR_ADDR] | (sharedmem[VBR_ADDR+1]<<8); // Erste Partition: Startsektor bestimmen
-	if (sect_offs > 1000 || sect_offs == 0) // Ungültiger Startsektor
+	if (sect_offs > 1000 || sect_offs == 0) // UngEtiger Startsektor
 		sect_offs = 0;  // Kein MBR? Annahme: SuperFloppy-Format (ohne Partitionen)
 
 	mmc_read_sector(sect_offs, sharedmem); // Bootsektor lesen
@@ -252,13 +252,13 @@ u08 fat_init(void) {
 
 	cluster_size = bs->BPB_SecPerClus; // Sektoren pro Cluster auslesen
 	fat_cnt = bs->BPB_NumFATs; // Anzahl FATs lesen
-	if (!fat_cnt) // FAT-Anzahl ungültig
+	if (!fat_cnt) // FAT-Anzahl ungEtig
 		return 0;
 
 	fat_pos = sect_offs + bs->BPB_RsvdSecCnt; // Reservierte Sektoren aufaddieren -> FAT-Startsektor //(sharedmem[0x0e] | (sharedmem[0x0f]<<8)); // alt
 	root_pos = fat_pos + fat_size * fat_cnt; // Rootdirectory-Startsektor berechnen
 	root_size = bs->BPB_RootEntCnt; // Anzahl reservierte Rootdir-Einträge //sharedmem[0x11] | (sharedmem[0x12]<<8); // alt
-	if (!root_size) // Ungültige Anzahl
+	if (!root_size) // UngEtige Anzahl
 		return 0;
 	file_pos = root_pos + (root_size>>4); // Erster Datensektor
 
@@ -351,7 +351,6 @@ static u08 read_fileentry(void) {
     @param File Number
     @return File found [=true]
 */
-
 u08 fat_read_filedata(u08 nr) {	// new file data in global struct
 	if (nr >= file_cnt)
 		return 0;
@@ -380,7 +379,6 @@ u08 fat_read_filedata(u08 nr) {	// new file data in global struct
     Stores result in global var file_cnt.
     Detects next free sector (cluster) after last file
 */
-
 void fat_count_files(void) {
 	fat_directaccess = 1;
 	mmc_load_start(root_pos);
@@ -459,8 +457,8 @@ void fat_delete_file(void) {
 	mmc_read_sector(fatsect, sharedmem);	// Betroffenen Rootdirsektor laden
 	offscl = fat_filedata.rootsectoffs;
 
-	for (i=0; i<fat_filedata.entries; i++) {	// Für jeden Root-Eintrag dieser Datei tue:
-		if (offscl >= 16) {	// Sektorgrenze überschritten
+	for (i=0; i<fat_filedata.entries; i++) {	// FE jeden Root-Eintrag dieser Datei tue:
+		if (offscl >= 16) {	// Sektorgrenze Eerschritten
 			mmc_write_sector(fatsect, sharedmem);	// Rootdirsektor speichern
 			fatsect++;	// Nächsten Rootdirsektor bestimmen
 			offscl = 0;
