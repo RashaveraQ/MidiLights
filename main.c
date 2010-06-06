@@ -253,7 +253,7 @@ static void hw_init(void) {
 	//UBRRL = (uint8_t)UART_UBRR_CALC(UART_BAUD_RATE,F_CPU);
 	//UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE);
 	// Midi device silence
-/*
+
 	// Read parameters from EEPROM
 	if (eeprom_read_byte(EE_VERSION_POS) != 0x27) {	// eeprom empty
 		eeprom_write_byte(EE_VERSION_POS, 0x27);
@@ -276,7 +276,7 @@ static void hw_init(void) {
 		if (temp >= 128 && temp <= 200)
 			OSCCAL = temp;
 	}
-*/
+
 	//Initialisierung der MMC/SD-Karte
 	MMC_hw_init();
 	spi_init();
@@ -290,7 +290,10 @@ static void hw_init(void) {
 	}
 	else {
 		lcd_string(DISP_CARDERR, LINE_CARDERR);
-		error(0xaa);
+		// akashi
+		for (;;) {
+			delay_ms(5000);
+		}
 	}
 	TCCR1B = 0;		// タイマ１プリスケーラを停止
 	srand(TCNT1);
@@ -307,7 +310,7 @@ static void hw_init(void) {
 	// Interrupts
 	// mega168
 	TIMSK1 = 2;
-	TIMSK2 = 2;
+	TIMSK2 |= 2;
 
 }
 
@@ -694,6 +697,14 @@ static void key_detect(void) {
 	u08 lwur=0;
 
 	u08 k = /* ((u08)(~KEY_PORT)&KEY_MASK) | ((u08)(~KEY_PORT2)&KEY_MASK2) */ 0x00;	// akashi
+
+	extern u08 gKey;
+
+	if (gKey) {
+		gKey = 0x00;
+		k = KEY_STOP;
+	}
+
 
 	if ((k&KEY_NEXT) && (k&KEY_LAST)) {
 		k = RC5_CODE_MENU; lwur=1;
@@ -1278,6 +1289,7 @@ union {
 	if (flags & MMCOK_FLAG) {
 		if (!fat_init()) {
 			lcd_string(DISP_CARDERR, LINE_CARDERR);
+			return;			// akashi
 			error(0xee);	// akashi
 		}
 		else {
@@ -1448,7 +1460,6 @@ union {
 				print_main();
 		}
 		else if (state == PLAY) {
-			gData[0] = 0x01;	// akashi
 				// Wiedergabe starten
 				if (ee_rep == 4 && !(flags & DIRNUM_FLAG)) {
 					file_num = random_song(file_num, file_cnt);
@@ -1761,6 +1772,7 @@ union {
 		else if (state == STOP) {
 			gl_lyr = false;
 			key_detect();
+			file_num = random_song(file_num, file_cnt);	// akashi
 			state = PLAY;	// akashi
 		}
 		else if (state == MENU) {
@@ -1793,10 +1805,26 @@ ISR(SIG_OUTPUT_COMPARE1A) {
 	}
 }
 
-
 /** Timer for real time clock.
 */
 ISR(SIG_OUTPUT_COMPARE2A) {
+
+	static uint8_t	sLedPowerBit = 0;
+
+	PORTA = 0;	// LEDの電源OFF
+
+	PORTC = 0xFF & ~(gData[sLedPowerBit]);
+	PORTD &= 0x1F;
+	PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
+
+	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
+
+	sLedPowerBit++;
+	if (sLedPowerBit > 7) {
+		sLedPowerBit = 0;
+	}
+
+
 	tickcnt++;
 	timeflag |= TIME_KPT;
 	real_time++;

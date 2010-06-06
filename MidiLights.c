@@ -41,6 +41,7 @@ ISR(TIMER2_OVF_vect)
 	}
 }
 
+
 // USART0, Rx Complete 
 ISR(USART0_RX_vect)
 {
@@ -179,49 +180,12 @@ void error(uint8_t err) {
 	}	
 }
 
-u08 sd_init()
-{
-	delay_ms(1000);
-
-	u08 res = MMC_init();
-	if (res == 1) {
-		if (!fat_init()) {
-			return 0xaa;
-		}
-		fat_count_files();
-//		fat_read_filedata(0);
-	} else {
-		// mmc error
-		return res;
-	}
-
-	gData[1] = (u08)(0x00ff & file_cnt);
-	gData[2] = (u08)((0xff00 & file_cnt) >> 8);	
-
-	return 0xc3;
-}
+u08 gKey = 0x00;
 
 // Pin Change Interrupt Request 3
 ISR(PCINT3_vect)
 {
-	cli();
-	// LEDの電源スイッチを全てOFF
-	PORTA = 0;
-
-	// ピン変化割り込み禁止
-	PCICR = 0;		// ポートD
-	PCMSK3 = 0;			
-
-	error(sd_init());
-
-	// ピン変化割り込み(赤外線リモコン受信許可)
-	PCICR = 1 << PCIE3;		// ポートD
-	PCMSK3 = 1 << PCINT26;	
-
-	// タイマ設定
-	TCCR2B = 0x01;	// プリスケーラは、1
-	TIMSK2 = 0x01;	// タイマ２オーバーフロー割り込み許可
-	sei();
+	gKey = 0x01;
 }
 
 void send(uint8_t data)
@@ -316,14 +280,14 @@ int main(void)
 	PCICR = 1 << PCIE3;		// ポートD
 	PCMSK3 = 1 << PCINT26;	
 
-	for (;;) {	
-		delay_ms(1000);
-	}
+//	for (;;) {	
+//		delay_ms(1000);
+//	}
 
 	// MMC/SDカード用の初期化処理
 //	delay_ms(1024);	// SDカードが安定するのを待つ。
 
-
+/*
 	u08 res = MMC_init();
 	if (res == 1) {
 		if (!fat_init()) {
@@ -339,7 +303,7 @@ int main(void)
 	gData[1] = (u08)(0x00ff & file_cnt);
 	gData[2] = (u08)((0xff00 & file_cnt) >> 8);	
 	error(0xc3);
-
+*/
 	main2();
 
 	for (;;) {
