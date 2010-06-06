@@ -2,6 +2,9 @@
 #include <avr/interrupt.h>
 #include "rc5.h"
 
+
+extern uint16_t	gData[8];	// akashi
+
 #define __AVR_ATmega168__	// akashi
 
 #ifndef RC5_INT
@@ -25,9 +28,11 @@ rc5_t rc5;
 /* ｵs for a whole bit of RC5 (first & second part) */
 #define RC5_BIT_US   (64*27)
 
+// 68 
 #define RC5_TICKS \
         ((uint8_t) ((uint32_t) (F_CPU / 1000 * RC5_BIT_US / 1000 / RC5_PRESCALE)))
         
+// 11.333
 #define RC5_DELTA \
         (RC5_TICKS / 6)
         
@@ -58,8 +63,8 @@ void rc5_init (uint8_t addr)
 	TCCR0A = 0;
 	TCCR0B = (1 << CS02) | (1 << CS00);
 #elif   (RC5_PRESCALE==256)
-	TCCR0A = 0;
-	TCCR0B = (1 << CS02);
+	TCCR0A = 0;				// 動作モード:ノーマル
+	TCCR0B = (1 << CS02);	// プリスケーラ:1024
 #elif   (RC5_PRESCALE==64)
 	TCCR0A = 0;
 	TCCR0B = (1 << CS01) | (1 << CS00);
@@ -70,24 +75,17 @@ void rc5_init (uint8_t addr)
         /* INTx on falling edge */
         /* clear pending INTx */
         /* enable INTx interrupt */
-#if (RC5_INT == RC5_INT0)               
 	EICRA = 0x02;	// 外部割り込み０ INT0 が HIGH → LOW
-	EIFR = 0x01;	// 
+	EIFR = 0x01;	// 割り込みペンディングをクリア
 	EIMSK |= 1;		// 外部割り込み０許可
-#elif (RC5_INT == RC5_INT1)             
-	EICRA = 0x02<<2;
-	EIFR = 0x01<<1;
-	EIMSK |= 1<<1;
-#else
-  #error please define RC5_INT
-#endif /* RC5_INT */
 }
 
 /* ******************************************************************************** */
 
-ISR(SIG_OVERFLOW0)
+// タイマ０オーバーフロー割り込み処理
+ISR(TIMER0_OVF_vect)
 {
-	TIMSK0 &= ~1;
+	TIMSK0 &= ~1;		// タイマ０オーバーフロー割り込み禁止
 
 	uint8_t _nbits = nbits;
 	code_t _code = code;
@@ -112,7 +110,9 @@ ISR(SIG_OVERFLOW0)
 			rc5.addr = _rc5_addr;
 			signed char flip = 0;
 			if (_code.b[1] & 0x20) /* 0b00100000 : #11 */
+			{
 				flip = 1;
+			}
 			rc5.flip = flip;
 		}
 	}
@@ -123,91 +123,64 @@ ISR(SIG_OVERFLOW0)
 	/* INTx on falling edge */
 	/* clear pending INTx */
 	/* enable INTx interrupt */
-#if (RC5_INT == RC5_INT0)               
-	EICRA = 0x02;
-	EIFR = 0x01;
-	EIMSK |= 1;
-#elif (RC5_INT == RC5_INT1)             
-	EICRA = 0x02<<2;
-	EIFR = 0x01<<1;
-	EIMSK |= 1<<1;
-#endif
+	EICRA = 0x02;	// 外部割り込み０ INT0 が HIGH → LOW
+	EIFR = 0x01;	// 割り込みペンディングをクリア
+	EIMSK |= 1;		// 外部割り込み０許可
 }
 
 /* ******************************************************************************** */
 
-#if (RC5_INT == RC5_INT0)               
-ISR(SIG_INTERRUPT0)
-#elif (RC5_INT == RC5_INT1)             
-ISR(SIG_INTERRUPT1)
-#endif /* RC5_INT */
+// 外部割り込み
+ISR(INT0_vect)
 {
-        code_t _code = code;
-        uint8_t _nint = nint;
-        
-        uint8_t tcnt0 = TCNT0;
-        TCNT0 = 0;
-        
-        if (0 == _nint)
-        {
-                /* INTx on both edges */
-#if (RC5_INT == RC5_INT0)
-  				EICRA = 0x01;
-#elif (RC5_INT == RC5_INT1)             
-  				EICRA = 0x01<<2;
-#endif /* RC5_INT */
-        
-                TIFR0 = 1;
-                TIMSK0 = 1;
-                _code.w = 0;
-        }
-        else
-        {
-                /* Number of bits of the just elapsed period */
-                uint8_t n = 1;
-         
-                /* Bits received so far */
-                uint8_t _nbits = nbits;
-        
-                /* is TCNT0 close to RC5_TICKS or RC5_TICKS/2 ? */
-                if (tcnt0 > RC5_TICKS + RC5_DELTA)
-                        goto invalid;
-                else if (tcnt0 < RC5_TICKS/2 - RC5_DELTA)
-                        goto invalid;
-                else if (tcnt0 > RC5_TICKS - RC5_DELTA)
-                        n = 2;
-                else if (tcnt0 > RC5_TICKS/2 + RC5_DELTA)
-                        goto invalid;
-                
-                /* store the just received 1 or 2 bits */
-                do
-                {
-                        _nbits++;
-                        if (_nbits & 1)
-                        {
-                                _code.w <<= 1;
-                                _code.b[0] |= _nint & 1;
-                        }
-                } 
-                while (--n);
-                
-                if (0)
-                {
-                        invalid:
-                        
-                        /* disable INTx, run into Overflow0 */
-#if (RC5_INT == RC5_INT0)               
-  						EIMSK &= ~1;
-#elif (RC5_INT == RC5_INT1)             
-  						EIMSK &= ~2;
-#endif /* RC5_INT */
+	code_t _code = code;
+	uint8_t _nint = nint;
 
-                        _nbits = 0;
-                }
-                
-                nbits = _nbits;
-        }
+	uint8_t tcnt0 = TCNT0;	// タイマ/カウンタ値を取得。
+	TCNT0 = 0;				// タイマ/カウンタ値を初期化。
 
-        code = _code;
-        nint = 1+_nint;
+	if (0 == _nint) {
+		/* INTx on both edges */
+		EICRA = 0x01;		// INT0 が Low→High, High→Low
+		TIFR0 = 1;			// タイマ/カウンタ０オーバーフロー割り込み結果をクリア
+		TIMSK0 = 1;			// タイマ/カウンタ０オーバーフロー割り込み許可
+		_code.w = 0;		// 
+	} else {
+		/* Number of bits of the just elapsed period */
+		uint8_t n = 1;
+
+		/* Bits received so far */
+		uint8_t _nbits = nbits;
+
+		/* is TCNT0 close to RC5_TICKS or RC5_TICKS/2 ? */
+		if (tcnt0 > RC5_TICKS + RC5_DELTA) {			// over 79  -> ng
+			goto invalid;
+		} else if (tcnt0 < RC5_TICKS/2 - RC5_DELTA) {	// under 23 -> ng
+			goto invalid;
+		} else if (tcnt0 > RC5_TICKS - RC5_DELTA) {		// over 57 -> ok
+			n = 2;
+		} else if (tcnt0 > RC5_TICKS/2 + RC5_DELTA) {	// over 45 -> ng
+			goto invalid;
+		}
+		/* store the just received 1 or 2 bits */
+		do {
+			_nbits++;
+			if (_nbits & 1) {
+				_code.w <<= 1;
+				_code.b[0] |= _nint & 1;
+			}
+		} while (--n);
+
+		if (0) {
+			invalid:
+			/* disable INTx, run into Overflow0 */
+			EIMSK &= ~1;	// 外部割り込み禁止
+			_nbits = 0;
+		}
+
+		nbits = _nbits;
+	}
+
+	code = _code;
+	nint = 1 + _nint;
 }

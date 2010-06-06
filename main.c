@@ -192,6 +192,8 @@ extern struct fat_filedata_st fat_filedata;
 extern u32 sect;
 extern u08 filemode;
 
+extern uint16_t	gData[8];	// akashi
+void error(uint8_t);		// akashi
 
 // Local Functions
 static void hw_init(void);
@@ -251,7 +253,7 @@ static void hw_init(void) {
 	//UBRRL = (uint8_t)UART_UBRR_CALC(UART_BAUD_RATE,F_CPU);
 	//UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE);
 	// Midi device silence
-
+/*
 	// Read parameters from EEPROM
 	if (eeprom_read_byte(EE_VERSION_POS) != 0x27) {	// eeprom empty
 		eeprom_write_byte(EE_VERSION_POS, 0x27);
@@ -274,30 +276,31 @@ static void hw_init(void) {
 		if (temp >= 128 && temp <= 200)
 			OSCCAL = temp;
 	}
-
+*/
 	//Initialisierung der MMC/SD-Karte
 	MMC_hw_init();
 	spi_init();
-	rc5_init(RC5_ALL);
+//	rc5_init(RC5_ALL);
 	sei();
 	delay_ms(100);
-	TCCR1B = 1;
+	TCCR1B = 1;		// É^ÉCÉ}ÇPÉvÉäÉXÉPÅ[ÉâÇÇPÇ…ê›íË
 	if (MMC_init()) {
 		lcd_string(DISP_OK, LINE_OK);
 		flags |= MMCOK_FLAG;
 	}
 	else {
 		lcd_string(DISP_CARDERR, LINE_CARDERR);
+		error(0xaa);
 	}
-	TCCR1B = 0;
+	TCCR1B = 0;		// É^ÉCÉ}ÇPÉvÉäÉXÉPÅ[ÉâÇí‚é~
 	srand(TCNT1);
-	TIFR1 |= 7;
-	TCNT1 = 0;
+	TIFR1 |= 7;		// É^ÉCÉÄÇPäÑÇËçûÇ›åãâ ÇÉNÉäÉA
+	TCNT1 = 0;		// É^ÉCÉ}ÇPÉJÉEÉìÉ^Çèâä˙âª
 
 	// Timer 0: Button Debounce
 	// Timer 1: Delta Time Timer
 	tempo = 2058;
-	OCR1A = 2058;
+	OCR1A = 2058;	// 
 	// Timer 2: RTC
 	OCR2 = RTC_RELOAD_TIMER;
 
@@ -390,8 +393,8 @@ static u08 getdata(void) {
 
 // Read from MMC
 
-/** Abspielpuffer f¸llen.
-	Liest MMC-Daten und f¸llt damit den Puffer ganz voll.
+/** Abspielpuffer fÅElen.
+	Liest MMC-Daten und fÅElt damit den Puffer ganz voll.
 */
 static void fill_playbuf(void) {
 	if (playbuf_state == PBS_FULL)
@@ -413,7 +416,7 @@ static void init_playbuf(void) {
 }
 
 /** Ein Byte vom Puffer holen.
-	Wenn der Puffer leer ist, wird er neu gef¸llt.
+	Wenn der Puffer leer ist, wird er neu gefÅElt.
 */
 static u08 read_playbuf(void) {
 	u08 temp;
@@ -624,7 +627,7 @@ static void calc_tempo(void) {
 // Buttons
 
 /** Entprellen der Tasten.
-	ATmega168 benutzt daf¸r den WDT.
+	ATmega168 benutzt dafÅE den WDT.
 	@param WDT-Modus [1=Timermodus, 0=WDT]
 */
 static void debounce(u08 mode) {
@@ -758,13 +761,13 @@ static void key_detect(void) {
 			k = ok & 0x7f;
 
 			if (state == MENU) {
-				if (k == RC5_CODE_NEXT) { // Men¸ bl‰ttern auf
+				if (k == RC5_CODE_NEXT) { // MenÅEbl‰ttern auf
 					menu_cnt--;
 					if (menu_cnt >= MAX_MENU)
 						menu_cnt = MAX_MENU-1;
 					print_menu();
 				}
-				else if (k == RC5_CODE_LAST) { // Men¸ bl‰ttern ab
+				else if (k == RC5_CODE_LAST) { // MenÅEbl‰ttern ab
 					menu_cnt++;
 					if (menu_cnt == MAX_MENU)
 						menu_cnt = 0;
@@ -923,12 +926,12 @@ static void key_detect(void) {
 					else if (k == RC5_CODE_DELETE) { // Datei lˆschen
 						state = DELETE;
 					}
-					else if (k == RC5_CODE_MENU) { // Men¸ ˆffnen
+					else if (k == RC5_CODE_MENU) { // MenÅEˆffnen
 						menu_cnt = 0;
 						print_menu();
 						state = MENU;
 					}
-					else if (k == RC5_CODE_LAST) { // Bl‰ttern r¸ckw‰rts
+					else if (k == RC5_CODE_LAST) { // Bl‰ttern rÅEkw‰rts
 						if (!file_num)
 							file_num = file_cnt;
 						file_num--;
@@ -982,7 +985,7 @@ static void key_detect(void) {
 
 			// No files on card or state is REC
 				if (state == STOP) {
-					if (k == RC5_CODE_MENU) { // Men¸ ˆffnen
+					if (k == RC5_CODE_MENU) { // MenÅEˆffnen
 						menu_cnt = 0;
 						print_menu();
 						state = MENU;
@@ -1053,7 +1056,7 @@ static void print_main(void) {
 }
 
 
-/** Anzeige Men¸.
+/** Anzeige MenÅE
 */
 static void print_menu(void) {
 	lcd_string(DISP_MENU, LINE_MENU);
@@ -1204,7 +1207,7 @@ static void print_playinfo(void)
 	print_tempo();
 }
 
-/** Zeit zur¸cksetzen.
+/** Zeit zurÅEksetzen.
 */
 static void clear_time(void) {
 	TCCR2 = 0;
@@ -1275,7 +1278,7 @@ union {
 	if (flags & MMCOK_FLAG) {
 		if (!fat_init()) {
 			lcd_string(DISP_CARDERR, LINE_CARDERR);
-			while (1);
+			error(0xee);	// akashi
 		}
 		else {
 			fat_count_files();
@@ -1445,10 +1448,9 @@ union {
 				print_main();
 		}
 		else if (state == PLAY) {
+			gData[0] = 0x01;	// akashi
 				// Wiedergabe starten
-				if (ee_rep == 4
-					&& !(flags & DIRNUM_FLAG)
-					) {
+				if (ee_rep == 4 && !(flags & DIRNUM_FLAG)) {
 					file_num = random_song(file_num, file_cnt);
 					fat_read_filedata(file_num);
 					print_filename(NAME_LINE);
@@ -1470,11 +1472,12 @@ union {
 					mmc_complete_read();
 					fat_closefile();
 					state = ERR+DISP_FILEERR;
+					error(0xcc);	// akashi
 					break;
 				}
 
 				fetchbyte();
-				checkbyte(0);	// Format 0 pr¸fen
+				checkbyte(0);	// Format 0 prÅEen
 				checkbyte(0);
 				checkbyte(6);
 				checkbyte(0);
@@ -1620,7 +1623,7 @@ union {
 										trk_len = 0;
 								}
 						}
-						adp = len;	// L‰nge merken (f¸r Running Status)
+						adp = len;	// L‰nge merken (fÅE Running Status)
 						ade = ev;
 						if (ch_nact || !(ee_mute & ((u16)1<<ch))) {
 							sendbyte(ev);
@@ -1758,6 +1761,7 @@ union {
 		else if (state == STOP) {
 			gl_lyr = false;
 			key_detect();
+			state = PLAY;	// akashi
 		}
 		else if (state == MENU) {
 			key_detect();

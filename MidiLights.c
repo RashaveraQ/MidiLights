@@ -5,7 +5,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "lcd.h"
+#include "mmc.h"
+#include "spi.h"
+#include "delay.h"
+#include "fat16.h"
+#include "types.h"
+#include "rc5.h"
+
 void main2(void);
+extern u16 file_cnt;
 
 uint16_t	gData[8];
 
@@ -19,6 +28,10 @@ ISR(TIMER2_OVF_vect)
 	PORTC = 0xFF & ~(gData[sLedPowerBit]);
 	PORTD &= 0x1F;
 	PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
+
+//	gData[2] = rc5.code;
+//	gData[3] = rc5.addr;
+//	gData[4] = rc5.flip;
 
 	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
 
@@ -154,10 +167,61 @@ ISR(USART0_UDRE_vect)
 {
 }
 
+void error(uint8_t err) {
+	sei();
+	for (u08 i = 0; i < 5; i++) {
+		gData[0] = err;
+		delay_ms(500);
+		gData[0] = 0xff;
+		delay_ms(100);
+		gData[0] = 0;
+		delay_ms(100);
+	}	
+}
+
+u08 sd_init()
+{
+	delay_ms(1000);
+
+	u08 res = MMC_init();
+	if (res == 1) {
+		if (!fat_init()) {
+			return 0xaa;
+		}
+		fat_count_files();
+//		fat_read_filedata(0);
+	} else {
+		// mmc error
+		return res;
+	}
+
+	gData[1] = (u08)(0x00ff & file_cnt);
+	gData[2] = (u08)((0xff00 & file_cnt) >> 8);	
+
+	return 0xc3;
+}
+
 // Pin Change Interrupt Request 3
 ISR(PCINT3_vect)
 {
-	gData[0]++;
+	cli();
+	// LEDの電源スイッチを全てOFF
+	PORTA = 0;
+
+	// ピン変化割り込み禁止
+	PCICR = 0;		// ポートD
+	PCMSK3 = 0;			
+
+	error(sd_init());
+
+	// ピン変化割り込み(赤外線リモコン受信許可)
+	PCICR = 1 << PCIE3;		// ポートD
+	PCMSK3 = 1 << PCINT26;	
+
+	// タイマ設定
+	TCCR2B = 0x01;	// プリスケーラは、1
+	TIMSK2 = 0x01;	// タイマ２オーバーフロー割り込み許可
+	sei();
 }
 
 void send(uint8_t data)
@@ -186,15 +250,6 @@ void note_off()
 	send(0x7B);
 }
 
-void error(uint8_t err) {
-	for (;;) {
-		gData[0] = err;
-		_delay_ms(100);
-		gData[0] = 0;
-		_delay_ms(100);
-	}	
-}
-
 int main(void)
 {
 	cli();
@@ -206,16 +261,16 @@ int main(void)
 	// 未接続(未使用)ピンは、ノイズ耐性向上のため'0'出力(GND接続状態)とします。
 	// MMCのため、SS(PB4),MOSI(PB5),MISO(PB6),SCK(PB7)を0
 	DDRB = 0xBF;
-	PORTB = 0x00;
+	PORTB = 0xF0;
 
 	// LEDの制御スイッチ('0'出力で点灯、'1'出力で消灯であり、最初は消灯させるので'1'出力とします。)
 	DDRC = 0xFF;
 	PORTC = 0xFF;
 
 	// D0は、MIDI入力。D1は、MIDI出力。D2は、赤外線リモコン受信用外部割り込み
-	// D1-D7は、LEDの制御スイッチ
+	// D5-D7は、LEDの制御スイッチ
 	DDRD = 0xFA;
-	PORTD = 0xFF;
+	PORTD = 0xE7;
 
 	// タイマ設定
 	TCCR2B = 0x01;	// プリスケーラは、1
@@ -225,28 +280,11 @@ int main(void)
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
 	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
 
-	// MMC/SDカード用の初期化処理
-//	MMC_hw_init();
-//	spi_init();
+	MMC_hw_init();
+	spi_init();
 	//rc5_init(RC5_ALL);
 
 	sei();
-/*
-	if (MMC_init()) {
-		lcd_string(DISP_OK, LINE_OK);
-		flags |= MMCOK_FLAG;
-	} else {
-		// mmc error
-	}
-
-	if (flags & MMCOK_FLAG) {
-		if (!fat_init()) {
-			error(1);
-		}
-		fat_count_files();
-		fat_read_filedata(file_num);
-	}
-*/
 	for (int8_t i = 0; i < 88; i++) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
@@ -274,14 +312,36 @@ int main(void)
 		gData[idx] &= ~data;
 		_delay_ms(3);
 	}
-
 	// ピン変化割り込み(赤外線リモコン受信許可)
 	PCICR = 1 << PCIE3;		// ポートD
 	PCMSK3 = 1 << PCINT26;	
 
-#if 0
+	for (;;) {	
+		delay_ms(1000);
+	}
+
+	// MMC/SDカード用の初期化処理
+//	delay_ms(1024);	// SDカードが安定するのを待つ。
+
+
+	u08 res = MMC_init();
+	if (res == 1) {
+		if (!fat_init()) {
+			error(0xaa);
+		}
+		fat_count_files();
+		fat_read_filedata(0);
+	} else {
+		// mmc error
+		error(res);
+	}
+
+	gData[1] = (u08)(0x00ff & file_cnt);
+	gData[2] = (u08)((0xff00 & file_cnt) >> 8);	
+	error(0xc3);
+
 	main2();
-#else
+
 	for (;;) {
 /*
 		for (int8_t i = 0; i < 88; i++) {
@@ -306,5 +366,4 @@ int main(void)
 */
 		_delay_ms(5000);
 	}
-#endif
 }
