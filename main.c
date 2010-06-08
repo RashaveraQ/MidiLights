@@ -1514,7 +1514,10 @@ union {
 				temp.byte[0] = fetchbyte();
 				trk_len = temp.udword;
 				time = 0;
-				speed = 0;
+//				speed = 0;
+				speed = -4;		// a little fast
+//				speed = -5;		// a little slow
+
 				gl_lyr = false;
 				for (i=0; i<16; i++) {
 					midisig[i] = 0;
@@ -1808,23 +1811,6 @@ ISR(SIG_OUTPUT_COMPARE1A) {
 /** Timer for real time clock.
 */
 ISR(SIG_OUTPUT_COMPARE2A) {
-
-	static uint8_t	sLedPowerBit = 0;
-
-	PORTA = 0;	// LED‚Ì“dŒ¹OFF
-
-	PORTC = 0xFF & ~(gData[sLedPowerBit]);
-	PORTD &= 0x1F;
-	PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
-
-	PORTA = 1 << sLedPowerBit;	// Žw’è‚ÌLED‚Ì“dŒ¹ON
-
-	sLedPowerBit++;
-	if (sLedPowerBit > 7) {
-		sLedPowerBit = 0;
-	}
-
-
 	tickcnt++;
 	timeflag |= TIME_KPT;
 	real_time++;

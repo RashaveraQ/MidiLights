@@ -19,7 +19,7 @@ extern u16 file_cnt;
 uint16_t	gData[8];
 
 // タイマー通知
-ISR(TIMER2_OVF_vect)
+ISR(TIMER0_OVF_vect)
 {
 	static uint8_t	sLedPowerBit = 0;
 
@@ -237,8 +237,8 @@ int main(void)
 	PORTD = 0xE7;
 
 	// タイマ設定
-	TCCR2B = 0x01;	// プリスケーラは、1
-	TIMSK2 = 0x01;	// タイマ２オーバーフロー割り込み許可
+	TCCR0B = 0x01;	// プリスケーラは、1
+	TIMSK0 = 0x01;	// タイマ２オーバーフロー割り込み許可
 	
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可

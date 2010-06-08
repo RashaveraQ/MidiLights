@@ -81,7 +81,7 @@ void rc5_init (uint8_t addr)
 }
 
 /* ******************************************************************************** */
-
+#if 0	// akashi
 // タイマ０オーバーフロー割り込み処理
 ISR(TIMER0_OVF_vect)
 {
@@ -184,3 +184,4 @@ ISR(INT0_vect)
 	code = _code;
 	nint = 1 + _nint;
 }
+#endif	// akashi
