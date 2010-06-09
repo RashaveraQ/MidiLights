@@ -616,6 +616,9 @@ static void calc_tempo(void) {
 		TCNT1 = 0;
 		dspd = 0;
 	}
+
+	tempo = tempo * 5 / 4;	// akashi
+
 	new_ocr1a = tempo - (tempo>>4)*speed;
 	flags |= OCCHNG_FLAG;
 	if (!gl_lyr && !(ee_midimon&2)) {
@@ -1514,8 +1517,8 @@ union {
 				temp.byte[0] = fetchbyte();
 				trk_len = temp.udword;
 				time = 0;
-//				speed = 0;
-				speed = -4;		// a little fast
+				speed = 0;
+//				speed = -4;		// a little fast
 //				speed = -5;		// a little slow
 
 				gl_lyr = false;
@@ -1794,22 +1797,32 @@ union {
 //----------------------------------------------------------
 // IRQ
 
-/** Timer for delta times.
-*/
+// Timer for delta times.
+// Timer/Counter1 Compare Match A
 ISR(SIG_OUTPUT_COMPARE1A) {
+
+	// 時刻をインクリメントする。
 	time++;
+
+	// DT_FLAG が有効かつ、時刻が、Δt 以上の場合、
 	if ((flags & DT_FLAG) && time>=delta_time) {
-		flags &= ~DT_FLAG;
+		// DT_FLAG を無効とする。
+		flags &= ~DT_FLAG;		
+		// 時刻を初期化する。
 		time = 0;
 	}
+
+	// 比較レジスタ変更が有効の場合、
 	if (flags & OCCHNG_FLAG) {
+		// 比較レジスタ変更を無効とする。
 		flags &= ~OCCHNG_FLAG;
+		// 比較レジスタを変更する。
 		OCR1A = new_ocr1a;
 	}
 }
 
-/** Timer for real time clock.
-*/
+// Timer for real time clock.
+// Timer/Counter2 Compare Match A
 ISR(SIG_OUTPUT_COMPARE2A) {
 	tickcnt++;
 	timeflag |= TIME_KPT;

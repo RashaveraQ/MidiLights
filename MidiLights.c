@@ -241,6 +241,7 @@ int main(void)
 	TIMSK0 = 0x01;	// タイマ２オーバーフロー割り込み許可
 	
 	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
+//	UBRR0 = 15;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
 	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
 
