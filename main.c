@@ -65,8 +65,8 @@ available on www.mikrocontroller.net!
 #endif
 
 // RTC Timer 2
-//#define RTC_PRESCALER		256	// akashi
-#define RTC_PRESCALER		320	// akashi
+//#define RTC_PRESCALER		256	// for 8MHz
+#define RTC_PRESCALER		320	// for 10MHz
 #define RTC_RELOAD_TIMER	250
 #define RTC_SOFT_COUNT		125
 #if F_CPU != (RTC_PRESCALER*RTC_RELOAD_TIMER*RTC_SOFT_COUNT)
@@ -741,6 +741,7 @@ static void key_detect(void) {
 
 	if (!(flags & KEY_FLAG))
 		return;
+
 	if (rc5.flip != -1) {
 		k = rc5.code|0x80;
 		if (k != ok || rc5.flip != ((flags>>4)&1) || (flags&IR_FLAG) == 0) {
@@ -755,19 +756,18 @@ static void key_detect(void) {
 		rc5.flip = -1;
 		debounce(3); // Längeres Entprellen, weil >60ms Sendeabstand der FB
 	}
-	if ((k != ok || (krc<2 && (kpt >= KEY_REP_TIME_INIT 
-	|| ((flags&IR_FLAG) && kpt >= KEY_REP_TIME_INIT_IR)
-	)) || (krc>1 && (kpt >= KEY_REP_TIME 
-	|| ((flags&IR_FLAG) && kpt >= KEY_REP_TIME_IR)
-	))) && (!wur || (wur && !k)))//!
+
+	if ((k != ok
+		 || (krc < 2 && (kpt >= KEY_REP_TIME_INIT || ((flags&IR_FLAG) && kpt >= KEY_REP_TIME_INIT_IR)))
+		 || (krc > 1 && (kpt >= KEY_REP_TIME || ((flags&IR_FLAG) && kpt >= KEY_REP_TIME_IR))))
+		&& (!wur || (wur && !k)))
 	{
 		kpt = 0;
-		if (k != ok
-		&& !(flags&IR_FLAG)
-		) {
+		if (k != ok && !(flags&IR_FLAG)) {
 			debounce(1);
 			ok = k;
 		}
+
 		if (ok) {
 			TCCR2 = 6+8;
 			if (krc < 255)

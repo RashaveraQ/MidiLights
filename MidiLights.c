@@ -13,34 +13,114 @@
 #include "types.h"
 #include "rc5.h"
 
+void rc5_TIMER0_OVF_vect();
+void rc5_INT0_vect();
+void rc5_init2();
+
 void main2(void);
+void rc5_exit();
+
 extern u16 file_cnt;
 
 uint16_t	gData[8];
 
+u08 gKey = 0x00;
+uint8_t gRc5checking = 0;
+
+// 外部割り込み
+ISR(INT0_vect)
+{
+	gKey = 0x01;
+
+/*	static u32 data = 0;
+	static u08 nbit = 0;
+	static u16 cmd = 0;
+
+	// LEDの電源スイッチ
+	DDRA = 0xFF;
+	PORTA = 0;
+
+	TIMSK0 &= ~1;		// タイマ０オーバーフロー割り込み禁止
+
+	// リモコン測定中
+	if (gRc5checking) {
+		nbit++;
+		data <<= 1;
+
+		// タイマカウンタの確認
+		if (TCNT0 > 13) {
+			data |= 0x0001;
+		}
+
+		// 
+		if (nbit == 16) {
+			cmd = (u16)(0x0000ffff & data);
+		}
+
+		// 
+		if (nbit == 50) {
+			// 正しいコマンドの場合、
+			//if (cmd == 0x4004) {
+				gData[0] = 0xff & (data >> 24);
+				gData[1] = 0xff & (data >> 16);
+				gData[2] = 0xff & (data >> 8);
+				gData[3] = 0xff & data;
+			//} else {
+			//	gData[0] = gData[1] = gData[2] = gData[3] = 0xff;
+			//}
+
+			// リモコン測定完了
+			nbit = 0;
+			gRc5checking = 0;
+			TCCR0B = 0x01;	// プリスケーラは、1
+		}
+	} else {
+		nbit = 0;
+		TCCR0B = 0x05;		// プリスケーラは、1024
+		gRc5checking = 1;	// リモコン測定中とする。
+	}
+	
+
+	TCNT0 = 0;	// タイマーカウント０
+	TIFR0 = 1;	// タイマ/カウンタ０オーバーフロー割り込み結果をクリア
+	TIMSK0 = 1;	// タイマ/カウンタ０オーバーフロー割り込み許可
+*/
+}
+
 // タイマー通知
 ISR(TIMER0_OVF_vect)
 {
-	static uint8_t	sLedPowerBit = 0;
+/*	TIMSK0 &= ~1;		// タイマ０オーバーフロー割り込み禁止
 
-	PORTA = 0;	// LEDの電源OFF
+	// リモコン測定中
+	if (gRc5checking) {
+		// リモコン測定完了
+		gRc5checking = 0;
+		TCCR0B = 0x01;	// プリスケーラは、1
+	} else {
+*/
+		static uint8_t	sLedPowerBit = 0;
 
-	PORTC = 0xFF & ~(gData[sLedPowerBit]);
-	PORTD &= 0x1F;
-	PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
+		PORTA = 0;	// LEDの電源OFF
 
-//	gData[2] = rc5.code;
-//	gData[3] = rc5.addr;
-//	gData[4] = rc5.flip;
+		PORTC = 0xFF & ~(gData[sLedPowerBit]);
+		PORTD &= 0x1F;
+		PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
 
-	PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
+		//gData[2] = rc5.code;
+		//gData[3] = rc5.addr;
 
-	sLedPowerBit++;
-	if (sLedPowerBit > 7) {
-		sLedPowerBit = 0;
-	}
+		PORTA = 1 << sLedPowerBit;	// 指定のLEDの電源ON
+
+		sLedPowerBit++;
+		if (sLedPowerBit > 7) {
+			sLedPowerBit = 0;
+		}
+/*	}
+
+	TIMSK0 = 1;		// タイマ/カウンタ０オーバーフロー割り込み許可
+*/
 }
-
 
 // USART0, Rx Complete 
 ISR(USART0_RX_vect)
@@ -180,13 +260,7 @@ void error(uint8_t err) {
 	}	
 }
 
-u08 gKey = 0x00;
 
-// Pin Change Interrupt Request 3
-ISR(PCINT3_vect)
-{
-	gKey = 0x01;
-}
 
 void send(uint8_t data)
 {
@@ -240,14 +314,14 @@ int main(void)
 	TCCR0B = 0x01;	// プリスケーラは、1
 	TIMSK0 = 0x01;	// タイマ２オーバーフロー割り込み許可
 	
-	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
-//	UBRR0 = 15;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / 16 * BAUD) - 1
+	UBRR0 = 19;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / (16 * BAUD)) - 1; for 10MHz
+//	UBRR0 = 15;		// MIDIのボーレートは、31.25Kbps  UBRRn = (fosc / (16 * BAUD)) - 1; for 8MHz
 //	UCSR0B = 0xB8;	// 送受信および受信完了送信空き割り込み許可
 	UCSR0B = 0x98;	// 送受信および受信完了割り込み許可
 
 	MMC_hw_init();
 	spi_init();
-	//rc5_init(RC5_ALL);
+//	rc5_init(RC5_ALL);
 
 	sei();
 	for (int8_t i = 0; i < 88; i++) {
@@ -278,33 +352,10 @@ int main(void)
 		_delay_ms(3);
 	}
 	// ピン変化割り込み(赤外線リモコン受信許可)
-	PCICR = 1 << PCIE3;		// ポートD
-	PCMSK3 = 1 << PCINT26;	
+	EICRA = 0x02;	// 外部割り込み０ INT0 が HIGH → LOW
+	EIFR = 0x01;	// 割り込みペンディングをクリア
+	EIMSK |= 1;		// 外部割り込み０許可
 
-//	for (;;) {	
-//		delay_ms(1000);
-//	}
-
-	// MMC/SDカード用の初期化処理
-//	delay_ms(1024);	// SDカードが安定するのを待つ。
-
-/*
-	u08 res = MMC_init();
-	if (res == 1) {
-		if (!fat_init()) {
-			error(0xaa);
-		}
-		fat_count_files();
-		fat_read_filedata(0);
-	} else {
-		// mmc error
-		error(res);
-	}
-
-	gData[1] = (u08)(0x00ff & file_cnt);
-	gData[2] = (u08)((0xff00 & file_cnt) >> 8);	
-	error(0xc3);
-*/
 	main2();
 
 	for (;;) {
