@@ -242,7 +242,7 @@ u08 MMC_init(void){
 	u08 res;
 	// the data sheet says that the MMC needs 74 clock pulses to startup
 	// 10*8== 80; 80>76
-	for( i = 0; i < 100; i++){
+	for(i = 0; i < 74; i++){
 		spi_io(0xff);
 	};
 
