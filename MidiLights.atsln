@@ -1,0 +1,17 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "MidiLights", "MidiLights.cproj", "{B469D4E8-15ED-4E63-98E4-3C9CEFBDBCAD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		default|AVR = default|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B469D4E8-15ED-4E63-98E4-3C9CEFBDBCAD}.default|AVR.ActiveCfg = default|AVR
+		{B469D4E8-15ED-4E63-98E4-3C9CEFBDBCAD}.default|AVR.Build.0 = default|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,98 +1,174 @@
-###############################################################################
-# Makefile for the project MidiLights
-###############################################################################
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
 
-## General Flags
-PROJECT = MidiLights
-MCU = atmega164p
-TARGET = MidiLights.elf
-CC = avr-gcc
+SHELL := cmd.exe
+RM := rm -rf
 
-CPP = avr-g++
+USER_OBJS :=
 
-## Options common to compile, link and assembly rules
-COMMON = -mmcu=$(MCU)
+LIBS := 
+PROJ := 
 
-## Compile options common for all C compilation units.
-CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -Os -std=gnu99 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d 
+O_SRCS := 
+C_SRCS := 
+S_SRCS := 
+S_UPPER_SRCS := 
+OBJ_SRCS := 
+ASM_SRCS := 
+PREPROCESSING_SRCS := 
+OBJS := 
+OBJS_AS_ARGS := 
+C_DEPS := 
+C_DEPS_AS_ARGS := 
+EXECUTABLES := 
+OUTPUT_FILE_PATH :=
+OUTPUT_FILE_PATH_AS_ARGS :=
+AVR_APP_PATH :=$$$AVR_APP_PATH$$$
+QUOTE := "
+ADDITIONAL_DEPENDENCIES:=
+OUTPUT_FILE_DEP:=
+LIB_DEP:=
 
-## Assembly specific flags
-ASMFLAGS = $(COMMON)
-ASMFLAGS += $(CFLAGS)
-ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
-
-## Linker flags
-LDFLAGS = $(COMMON)
-LDFLAGS +=  -Wl,-Map=MidiLights.map
-
-
-## Intel Hex file production flags
-HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
-
-HEX_EEPROM_FLAGS = -j .eeprom
-HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
-HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
+# Every subdirectory with source files must be described here
+SUBDIRS := 
 
 
-## Objects that must be built in order to link
-OBJECTS = MidiLights.o fat16.o mmc.o rc5.o spi.o delay.o lcd.o main.o 
+# Add inputs and outputs from these tool invocations to the build variables 
+C_SRCS +=  \
+../MidiLights.c \
+../fat16.c \
+../mmc.c \
+../rc5.c \
+../spi.c \
+../delay.c \
+../lcd.c \
+../main.c
 
-## Objects explicitly added by the user
-LINKONLYOBJECTS = 
 
-## Build
-all: $(TARGET) MidiLights.hex MidiLights.eep MidiLights.lss size
+PREPROCESSING_SRCS += 
 
-## Compile
-MidiLights.o: ../MidiLights.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-fat16.o: ../fat16.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+ASM_SRCS += 
 
-mmc.o: ../mmc.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-rc5.o: ../rc5.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+OBJS +=  \
+MidiLights.o \
+fat16.o \
+mmc.o \
+rc5.o \
+spi.o \
+delay.o \
+lcd.o \
+main.o
 
-spi.o: ../spi.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+OBJS_AS_ARGS +=  \
+MidiLights.o \
+fat16.o \
+mmc.o \
+rc5.o \
+spi.o \
+delay.o \
+lcd.o \
+main.o
 
-delay.o: ../delay.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+C_DEPS +=  \
+MidiLights.d \
+fat16.d \
+mmc.d \
+rc5.d \
+spi.d \
+delay.d \
+lcd.d \
+main.d
 
-lcd.o: ../lcd.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+C_DEPS_AS_ARGS +=  \
+MidiLights.d \
+fat16.d \
+mmc.d \
+rc5.d \
+spi.d \
+delay.d \
+lcd.d \
+main.d
 
-main.o: ../main.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+OUTPUT_FILE_PATH +=MidiLights.elf
 
-##Link
-$(TARGET): $(OBJECTS)
-	 $(CC) $(LDFLAGS) $(OBJECTS) $(LINKONLYOBJECTS) $(LIBDIRS) $(LIBS) -o $(TARGET)
+OUTPUT_FILE_PATH_AS_ARGS +=MidiLights.elf
 
-%.hex: $(TARGET)
-	avr-objcopy -O ihex $(HEX_FLASH_FLAGS)  $< $@
+ADDITIONAL_DEPENDENCIES:=
 
-%.eep: $(TARGET)
-	-avr-objcopy $(HEX_EEPROM_FLAGS) -O ihex $< $@ || exit 0
+OUTPUT_FILE_DEP:= ./makedep.mk
 
-%.lss: $(TARGET)
-	avr-objdump -h -S $< > $@
+LIB_DEP+= 
 
-size: ${TARGET}
-	@echo
-	@avr-size -C --mcu=${MCU} ${TARGET}
+# AVR32/GNU C Compiler
 
-## Clean target
-.PHONY: clean
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+./%.o: .././%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 20100110.0
+	$(QUOTE)C:\WinAVR-20100110\bin\avr-gcc.exe$(QUOTE)  -funsigned-char -funsigned-bitfields -Os -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall -mmcu=atmega164p -c -gdwarf-2 -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<"
+	@echo Finished building: $<
+	
+
+
+
+# AVR32/GNU Preprocessing Assembler
+
+
+
+# AVR32/GNU Assembler
+
+
+
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(strip $(C_DEPS)),)
+-include $(C_DEPS)
+endif
+endif
+
+# Add inputs and outputs from these tool invocations to the build variables 
+
+# All Target
+all: $(OUTPUT_FILE_PATH) $(ADDITIONAL_DEPENDENCIES)
+
+$(OUTPUT_FILE_PATH): $(OBJS) $(USER_OBJS) $(OUTPUT_FILE_DEP) $(LIB_DEP)
+	@echo Building target: $@
+	@echo Invoking: AVR/GNU Linker : 20100110.0
+	$(QUOTE)C:\WinAVR-20100110\bin\avr-gcc.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -Wl,-Map="MidiLights.map" -Wl,--start-group  -Wl,--end-group -Wl,--gc-sections -mmcu=atmega164p 
+	@echo Finished building target: $@
+	"C:\WinAVR-20100110\bin\avr-objcopy.exe" -O ihex -R .eeprom -R .fuse -R .lock -R .signature  "MidiLights.elf" "MidiLights.hex"
+	"C:\WinAVR-20100110\bin\avr-objcopy.exe" -j .eeprom  --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0  --no-change-warnings -O ihex "MidiLights.elf" "MidiLights.eep" || exit 0
+	"C:\WinAVR-20100110\bin\avr-objdump.exe" -h -S "MidiLights.elf" > "MidiLights.lss"
+	"C:\WinAVR-20100110\bin\avr-objcopy.exe" -O srec -R .eeprom -R .fuse -R .lock -R .signature  "MidiLights.elf" "MidiLights.srec"
+	"C:\WinAVR-20100110\bin\avr-size.exe" "MidiLights.elf"
+	
+	
+
+
+
+
+
+# Other Targets
 clean:
-	-rm -rf $(OBJECTS) MidiLights.elf dep/* MidiLights.hex MidiLights.eep MidiLights.lss MidiLights.map
-
-
-## Other dependencies
--include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)
-
+	-$(RM) $(OBJS_AS_ARGS) $(EXECUTABLES)  
+	-$(RM) $(C_DEPS_AS_ARGS)   
+	rm -rf "MidiLights.elf" "MidiLights.a" "MidiLights.hex" "MidiLights.lss" "MidiLights.eep" "MidiLights.map" "MidiLights.srec"
+	
