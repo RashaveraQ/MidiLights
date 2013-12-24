@@ -195,8 +195,9 @@ void lcd_setcur(u08 x, u08 y) {
 }
 
 // Schreibt die Customchars
-static void lcd_initcgram(void) {
 /*
+static void lcd_initcgram(void) {
+
 	u08 i, k;
 	for (i=0; i<8; i++) {
 		for (k=0; k<8; k++) {
@@ -207,8 +208,8 @@ static void lcd_initcgram(void) {
 				lcd_data(0x00);
 		}
 	}
-*/
 }
+*/
 
 // Hexadezimale Ausgabe Nibble
 void lcd_nibble(u08 d) {

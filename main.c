@@ -260,19 +260,19 @@ static void hw_init(void) {
 		menu_save();
 	}
 	else {	// load parameters
-		ee_drumch = eeprom_read_byte(EE_DRUMCH_POS);
+		ee_drumch = eeprom_read_byte((const uint8_t*)EE_DRUMCH_POS);
 		if (ee_drumch > 15)	// invalid channel
 			ee_drumch = 10;
-		ee_lyr = eeprom_read_byte(EE_LYRICS_POS);
-		ee_mute = eeprom_read_word(EE_MUTE_POS);
-		ee_rep = eeprom_read_byte(EE_REPEAT_POS);
+		ee_lyr = eeprom_read_byte((const uint8_t*)EE_LYRICS_POS);
+		ee_mute = eeprom_read_word((const uint16_t*)EE_MUTE_POS);
+		ee_rep = eeprom_read_byte((const uint8_t*)EE_REPEAT_POS);
 		if (ee_rep > 4)
 			ee_rep = 2;
 
-		ee_midimon = eeprom_read_byte(EE_MONITOR_POS);
+		ee_midimon = eeprom_read_byte((const uint8_t*)EE_MONITOR_POS);
 		if (ee_midimon > 3)
 			ee_midimon = 1;
-		temp = eeprom_read_byte(EE_OSCCAL_POS);
+		temp = eeprom_read_byte((const uint8_t*)EE_OSCCAL_POS);
 		if (temp >= 128 && temp <= 200)
 			OSCCAL = temp;
 	}
@@ -318,12 +318,12 @@ static void hw_init(void) {
 /** Save EEPROM data.
 */
 static void menu_save(void) {
-	eeprom_write_byte(EE_DRUMCH_POS, ee_drumch);
-	eeprom_write_byte(EE_LYRICS_POS, ee_lyr);
-	eeprom_write_word(EE_MUTE_POS, ee_mute);
-	eeprom_write_byte(EE_REPEAT_POS, ee_rep);
-	eeprom_write_byte(EE_MONITOR_POS, ee_midimon);
-	eeprom_write_byte(EE_OSCCAL_POS, OSCCAL);
+	eeprom_write_byte((uint8_t*)EE_DRUMCH_POS, ee_drumch);
+	eeprom_write_byte((uint8_t*)EE_LYRICS_POS, ee_lyr);
+	eeprom_write_word((uint16_t*)EE_MUTE_POS, ee_mute);
+	eeprom_write_byte((uint8_t*)EE_REPEAT_POS, ee_rep);
+	eeprom_write_byte((uint8_t*)EE_MONITOR_POS, ee_midimon);
+	eeprom_write_byte((uint8_t*)EE_OSCCAL_POS, OSCCAL);
 }
 
 
@@ -1303,9 +1303,7 @@ union {
 	}
 
 	while (1) {
-
 		if (state == REC) {
-
 				// Rekorder-Task
 				fat_openfile(FILEMODE_WRITE, file_cnt);
 				mmc_write_start(fat_filedata.startsect+1);
@@ -1340,39 +1338,33 @@ union {
 						lcd_number(file_cnt+1, 1);
 					}
 					writebyte(ev);
-
 					if (ev == 0xf0) {	// SysEx
 						do {
 							i = getdata();
 							writebyte(i);
 						} while (i != 0xf7);
-					}
-					else if (ev < 0x80) {	// Running status
+					} else if (ev < 0x80) {	// Running status
 						if ((ade&0xf0) == 0x80) { // NoteOff
 							writebyte(getdata());
 							if (notecnt[ch])
 								notecnt[ch]--;
 							if (!notecnt[ch])
 								midisig[ch] = 1;
-						}
-						else if ((ade&0xf0) == 0x90) { // NoteOn
+						}else if ((ade&0xf0) == 0x90) { // NoteOn
 							i = getdata();
 							writebyte(i);
 							i = (i>>4)+1;
 							if (i > 7) i = 7;
 							midisig[ch] = i;
 							notecnt[ch]++;
-						}
-						else
-						{
+						} else {
 							len = adp-1;
 							while (len) {
 								writebyte(getdata());
 								len--;
 							}
 						}
-					}
-					else {
+					} else {
 						// MidiEvent
 						switch (ev) {
 						case 0xf2:
@@ -1441,11 +1433,11 @@ union {
 					mmc_complete_write();
 
 					mmc_write_start(fat_filedata.startsect);
-					writestring("MThd", 4);
+					writestring((u08*)"MThd", 4);
 					mmc_write_dword(6);
 					mmc_write_dword(1);
 					mmc_write_word(240);	// Fixes Tempo im Header
-					writestring("MTrk", 4);
+					writestring((u08*)"MTrk", 4);
 					mmc_write_dword(trk_len);
 					mmc_write_word(255);
 					mmc_write_byte(2);
@@ -1461,267 +1453,246 @@ union {
 				}
 
 				print_main();
-		}
-		else if (state == PLAY) {
-				// Wiedergabe starten
-				if (ee_rep == 4 && !(flags & DIRNUM_FLAG)) {
-					file_num = random_song(file_num, file_cnt);
-					fat_read_filedata(file_num);
-					print_filename(NAME_LINE);
-				}
-				flags &= ~DIRNUM_FLAG;
-				clear_time();
-				transpose = 0;
-				if (ee_midimon&2) // Anzeige nur wenn keine Midi-Pegelanzeige
-					lcd_string(DISP_BLANK, LINE_TEMPO);
-				else
-					print_playinfo();
-				
-				{
-					fat_openfile(FILEMODE_READ, file_num);
-				}
+		} else if (state == PLAY) {
+			// Wiedergabe starten
+			if (ee_rep == 4 && !(flags & DIRNUM_FLAG)) {
+				file_num = random_song(file_num, file_cnt);
+				fat_read_filedata(file_num);
+				print_filename(NAME_LINE);
+			}
+			flags &= ~DIRNUM_FLAG;
+			clear_time();
+			transpose = 0;
+			if (ee_midimon&2) // Anzeige nur wenn keine Midi-Pegelanzeige
+				lcd_string(DISP_BLANK, LINE_TEMPO);
+			else
+				print_playinfo();
+			{
+				fat_openfile(FILEMODE_READ, file_num);
+			}
+			init_playbuf();
+			if (!checkstring((u08*)"MThd", 4)) {
+				mmc_complete_read();
+				fat_closefile();
+				state = ERR+DISP_FILEERR;
+				error(0xcc);	// akashi
+				break;
+			}
+			fetchbyte();
+			checkbyte(0);	// Format 0 prÅEen
+			checkbyte(0);
+			checkbyte(6);
+			checkbyte(0);
+			checkbyte(0);
+			checkbyte(0);
+			checkbyte(1);
+			temp.byte[1] = fetchbyte();	// Tempo lesen
+			temp.byte[0] = fetchbyte();
+			gl_timeset = temp.word[0];
 
-				init_playbuf();
-				if (!checkstring("MThd", 4)) {
-					mmc_complete_read();
-					fat_closefile();
-					state = ERR+DISP_FILEERR;
-					error(0xcc);	// akashi
+			TCNT1 = 0;
+			// Tempo berechnen
+			if (gl_timeset < 0x8000)	// Delta-Ticks
+				tempo = 500000UL/gl_timeset;
+			else				// SMPTE-Timeformat
+				tempo = 1000000UL/(-(s08)(gl_timeset>>8))/gl_timeset;
+			checkstring((u08*)"MTrk", 4);	// Track lesen
+			temp.byte[3] = fetchbyte();	// L‰nge lesen
+			temp.byte[2] = fetchbyte();
+			temp.byte[1] = fetchbyte();
+			temp.byte[0] = fetchbyte();
+			trk_len = temp.udword;
+			time = 0;
+			speed = 0;
+//			speed = -4;		// a little fast
+//			speed = -5;		// a little slow
+			gl_lyr = false;
+			for (i = 0; i < 16; i++) {
+				midisig[i] = 0;
+				notecnt[i] = 0;
+			}
+			tickcnt = 0;
+			decaycnt = 0;
+			lyrx = 0; lyry = 0;
+			calc_tempo();
+			start_time();	// Start Time
+			while (state == PLAY) {
+				if (trk_len == 0) {	// Tracklen wird heruntergez‰hlt. Bei 0 = Ende erreicht
+					state = STOP;
 					break;
 				}
-
-				fetchbyte();
-				checkbyte(0);	// Format 0 prÅEen
-				checkbyte(0);
-				checkbyte(6);
-				checkbyte(0);
-				checkbyte(0);
-				checkbyte(0);
-				checkbyte(1);
-				temp.byte[1] = fetchbyte();	// Tempo lesen
-				temp.byte[0] = fetchbyte();
-				gl_timeset = temp.word[0];
-
-				TCNT1 = 0;
-				// Tempo berechnen
-				if (gl_timeset < 0x8000)	// Delta-Ticks
-					tempo = 500000UL/gl_timeset;
-				else				// SMPTE-Timeformat
-					tempo = 1000000UL/(-(s08)(gl_timeset>>8))/gl_timeset;
-
-				checkstring("MTrk", 4);	// Track lesen
-
-				temp.byte[3] = fetchbyte();	// L‰nge lesen
-				temp.byte[2] = fetchbyte();
-				temp.byte[1] = fetchbyte();
-				temp.byte[0] = fetchbyte();
-				trk_len = temp.udword;
-				time = 0;
-				speed = 0;
-//				speed = -4;		// a little fast
-//				speed = -5;		// a little slow
-
-				gl_lyr = false;
-				for (i=0; i<16; i++) {
-					midisig[i] = 0;
-					notecnt[i] = 0;
-				}
-				tickcnt = 0;
-				decaycnt = 0;
-
-				lyrx = 0; lyry = 0;
-
-				calc_tempo();
-				start_time();	// Start Time
-
-				while (state == PLAY) {
-					if (trk_len == 0) {	// Tracklen wird heruntergez‰hlt. Bei 0 = Ende erreicht
-						state = STOP;
-						break;
-					}
-					wait_for_deltatime();
-					if (state == STOP || state >= ERR)
-						break;
+				wait_for_deltatime();
+				if (state == STOP || state >= ERR)
+					break;
+				ev = fetchbyte();
+				if (ev == 0xFF) {	// META-EVENT
 					ev = fetchbyte();
-					if (ev == 0xFF) {	// META-EVENT
-						ev = fetchbyte();
-						switch (ev) {
-							case 0x2f:	// End Of Track
-								checkbyte(0);
-								trk_len = 0;
-								break;
-							case 0x51:	// Tempo Change
-								checkbyte(3);
-								temp.byte[3] = 0;
-								temp.byte[2] = fetchbyte();
-								temp.byte[1] = fetchbyte();
-								temp.byte[0] = fetchbyte();
-								TCNT1 = 0;
-								tempo = temp.udword/gl_timeset;
-								calc_tempo();
-								break;
-							case 0x05:	// Lyrics
-								if (ee_lyr) {
-									len = 0;
-									gl_lyr = true;
-									temp.word[0] = fetch_varlen();
-									lcd_setcur(lyrx, lyry);
-									while (temp.word[0]) {
-										temp.word[0]--;
-										ev = fetchbyte();
-										if (ev >= ' ' && ev <= '~') {
-											lcd_data(ev);
-											lyrx++;
-											if (lyrx == LINESIZE) {
-												lyrx = 0;
-												lyry++;
-												if (lyry == MAX_LINES)
-													lyry = 0;
-												lcd_string(DISP_BLANK, lyry);
-												lcd_setcur(0, lyry);
-											}
-										}
+					switch (ev) {
+					case 0x2f:	// End Of Track
+						checkbyte(0);
+						trk_len = 0;
+						break;
+					case 0x51:	// Tempo Change
+						checkbyte(3);
+						temp.byte[3] = 0;
+						temp.byte[2] = fetchbyte();
+						temp.byte[1] = fetchbyte();
+						temp.byte[0] = fetchbyte();
+						TCNT1 = 0;
+						tempo = temp.udword/gl_timeset;
+						calc_tempo();
+						break;
+					case 0x05:	// Lyrics
+						if (ee_lyr) {
+							len = 0;
+							gl_lyr = true;
+							temp.word[0] = fetch_varlen();
+							lcd_setcur(lyrx, lyry);
+							while (temp.word[0]) {
+								temp.word[0]--;
+								ev = fetchbyte();
+								if (ev >= ' ' && ev <= '~') {
+									lcd_data(ev);
+									lyrx++;
+									if (lyrx == LINESIZE) {
+										lyrx = 0;
+										lyry++;
+										if (lyry == MAX_LINES)
+											lyry = 0;
+										lcd_string(DISP_BLANK, lyry);
+										lcd_setcur(0, lyry);
 									}
-									break;
 								}
-							default:
-								temp.word[0] = fetch_varlen();
-								while (temp.word[0]) {
-									temp.word[0]--;
-									fetchbyte();
-								}
+							}
+							break;
 						}
-					}
-					else if (ev == 0xf0) {	// SYSEX
-						sendbyte(0xf0);
+					default:
 						temp.word[0] = fetch_varlen();
 						while (temp.word[0]) {
 							temp.word[0]--;
-							ev = fetchbyte();
-							sendbyte(ev);
+							fetchbyte();
 						}
 					}
-					else if (ev >= 0x80) {	// MIDI-EVENT
-						trp = false;
-						ch_nact = 1;
-						switch (ev) {
-							case 0xf2:
-								len = 2;
-								break;
-							case 0xf3:
-								len = 1;
-								break;
-							default:
-								ch = ev & 0x0f;
-								ch_nact = 0;
-								switch (ev & 0xf0) {
-									case 0xf0:
-										len = 0;
-										break;
-									case 0xc0:	// ProgramChange
-									case 0xd0:	// ChannelAftertouch
-										len = 1;
-										break;
-									case 0x80:	// NoteOff
-										if (notecnt[ch])
-											notecnt[ch]--;
-										if (!notecnt[ch])
-											midisig[ch] = 1;
-									case 0x90:	// NoteOn
-									case 0xa0:	// PolyphonicAftertouch
-										trp = true;
-									case 0xb0:	// ControlModeChange
-									case 0xe0:	// PitchWheel
-										len = 2;
-										break;
-									default:
-										state = ERR+DISP_FILEERR;
-										len = 0;
-										trk_len = 0;
-								}
-						}
-						adp = len;	// L‰nge merken (fÅE Running Status)
-						ade = ev;
-						if (ch_nact || !(ee_mute & ((u16)1<<ch))) {
-							sendbyte(ev);
-							if (trp) {
-								i = fetchbyte();
-								if (ch != ee_drumch)
-									i += transpose;
-								sendbyte(i);
-								i = fetchbyte();
-								sendbyte(i);
-								if ((ade&0xf0) == 0x90) { // NoteOn
-									i = (i>>4)+1;
-									if (i > 7) i = 7;
-									midisig[ch] = i;
-									notecnt[ch]++;
-								}
-							}
-							else {
-								if ((ev&0xf0) == 0xB0) { // ControlMode AllNotesOff/AllSoundsOff auf midisig mappen
-									i = fetchbyte();
-									sendbyte(i);
-									if (i == 0x78 || i == 0x7B) {
-										midisig[ch] = 1;
-										notecnt[ch] = 0;
-									}
-									sendbyte(fetchbyte());
-								}
-								else
-								while (len) {
-									sendbyte(fetchbyte());	// Bytes durchschleifen
-									len--;
-								}
-							}
-						}
-						else {
-							while (len) {
-								fetchbyte();	// Bytes ignorieren
-								len--;
-							}
+				} else if (ev == 0xf0) {	// SYSEX
+					sendbyte(0xf0);
+					temp.word[0] = fetch_varlen();
+					while (temp.word[0]) {
+						temp.word[0]--;
+						ev = fetchbyte();
+						sendbyte(ev);
+					}
+				} else if (ev >= 0x80) {	// MIDI-EVENT
+					trp = false;
+					ch_nact = 1;
+					switch (ev) {
+					case 0xf2:
+						len = 2;
+						break;
+					case 0xf3:
+						len = 1;
+						break;
+					default:
+						ch = ev & 0x0f;
+						ch_nact = 0;
+						switch (ev & 0xf0) {
+						case 0xf0:
+							len = 0;
+							break;
+						case 0xc0:	// ProgramChange
+						case 0xd0:	// ChannelAftertouch
+							len = 1;
+							break;
+						case 0x80:	// NoteOff
+							if (notecnt[ch])
+								notecnt[ch]--;
+							if (!notecnt[ch])
+								midisig[ch] = 1;
+						case 0x90:	// NoteOn
+						case 0xa0:	// PolyphonicAftertouch
+							trp = true;
+						case 0xb0:	// ControlModeChange
+						case 0xe0:	// PitchWheel
+							len = 2;
+							break;
+						default:
+							state = ERR+DISP_FILEERR;
+							len = 0;
+							trk_len = 0;
 						}
 					}
-					else {			// Running Status
-						if (ch_nact || !(ee_mute & ((u16)1<<ch))) {
-							if (trp && ch != ee_drumch)
-								sendbyte(ev+transpose);
-							else
-								sendbyte(ev);
+					adp = len;	// L‰nge merken (fÅE Running Status)
+					ade = ev;
+					if (ch_nact || !(ee_mute & ((u16)1 << ch))) {
+						sendbyte(ev);
+						if (trp) {
+							i = fetchbyte();
+							if (ch != ee_drumch)
+								i += transpose;
+							sendbyte(i);
+							i = fetchbyte();
+							sendbyte(i);
 							if ((ade&0xf0) == 0x90) { // NoteOn
-								i = fetchbyte();
-								sendbyte(i);
 								i = (i>>4)+1;
 								if (i > 7) i = 7;
 								midisig[ch] = i;
 								notecnt[ch]++;
 							}
-							else if ((ade&0xf0) == 0x80) { // NoteOff
+						} else {
+							if ((ev&0xf0) == 0xB0) { // ControlMode AllNotesOff/AllSoundsOff auf midisig mappen
+								i = fetchbyte();
+								sendbyte(i);
+								if (i == 0x78 || i == 0x7B) {
+									midisig[ch] = 1;
+									notecnt[ch] = 0;
+								}
+								sendbyte(fetchbyte());
+							} else
+								while (len) {
+									sendbyte(fetchbyte());	// Bytes durchschleifen
+									len--;
+								}
+							}
+						} else {
+							while (len) {
+								fetchbyte();	// Bytes ignorieren
+								len--;
+							}
+						}
+					} else {			// Running Status
+						if (ch_nact || !(ee_mute & ((u16)1 << ch))) {
+							if (trp && ch != ee_drumch)
+								sendbyte(ev + transpose);
+							else
+								sendbyte(ev);
+							if ((ade&0xf0) == 0x90) { // NoteOn
+								i = fetchbyte();
+								sendbyte(i);
+								i = (i >> 4)+1;
+								if (i > 7) i = 7;
+								midisig[ch] = i;
+								notecnt[ch]++;
+							} else if ((ade & 0xf0) == 0x80) { // NoteOff
 								i = fetchbyte();
 								sendbyte(i);
 								if (notecnt[ch])
 									notecnt[ch]--;
 								if (!notecnt[ch])
 									midisig[ch] = 1;
-							}
-							else if ((ade&0xf0) == 0xB0) {
+							} else if ((ade & 0xf0) == 0xB0) {
 								i = fetchbyte();
 								sendbyte(i);
 								if (ev == 0x78 || ev == 0x7B) {
 									midisig[ch] = 1;
 									notecnt[ch] = 0;
 								}
-							}
-							else
-							{
+							} else {
 								len = adp - 1;
 								while (len) {
 									sendbyte(fetchbyte());
 									len--;
 								}
 							}
-						}
-						else {
+						} else {
 							len = adp - 1;
 							while (len) {
 								fetchbyte();	// Bytes ignorieren
@@ -1744,8 +1715,7 @@ union {
 						if (file_num < file_cnt-1) {
 							file_num++;
 							state = PLAY;
-						}
-						else if (ee_rep == 3) {
+						} else if (ee_rep == 3) {
 							file_num = 0;
 							state = PLAY;
 						}
@@ -1753,20 +1723,16 @@ union {
 							file_num = random_song(file_num, file_cnt);
 							state = PLAY;
 						}
-					}
-					else if (ee_rep == 1) {
+					} else if (ee_rep == 1) {
 						state = PLAY;
 					}
 				}
 				if (state == PLAY) {
 					print_main();
 					state = PLAY;
-				}
-				else
+				} else
 					print_main();
-		}
-		else if (state == DELETE) {
-
+		} else if (state == DELETE) {
 			lcd_string(DISP_DELETE, LINE_DELETE);	// Bildschirm anzeigen
 			file_cnt--;
 			fat_delete_file();
@@ -1774,17 +1740,14 @@ union {
 				file_num--;
 			delay_ms(1024);
 			print_main();
-		}
-		else if (state == STOP) {
+		} else if (state == STOP) {
 			gl_lyr = false;
 			key_detect();
 			file_num = random_song(file_num, file_cnt);	// akashi
 			state = PLAY;	// akashi
-		}
-		else if (state == MENU) {
+		} else if (state == MENU) {
 			key_detect();
-		}
-		else {
+		} else {
 			stop_time();
 			lcd_string(state-ERR, 1);
 			delay_ms(1024);
@@ -1792,7 +1755,6 @@ union {
 		}
 	}
 }
-
 
 //----------------------------------------------------------
 // IRQ

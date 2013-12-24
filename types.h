@@ -49,7 +49,7 @@ typedef u08 bool;
 #define TO_HIBYTE(x)	(u16)(x<<8)
 #define TO_LOBYTE(x)	(u08)(x>>8)
 #define TO_UPPER(x)		((x>='a') && (x<='z'))?(x+('A'-'a'):(x)
-#define NULL 0x00
+//#define NULL 0x00
 
 #define cbi(a, b) a &= ~(1<<(b))
 #define sbi(a, b) a |= (1<<(b))

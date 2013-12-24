@@ -163,6 +163,7 @@ inline static void MMC_cleanup(void){
 };
 
 // gets n bytes plus crc from spi bus
+/*
 static void MMC_get_data(u08* ptr_data, u16 length){
   MMC_wait_for_start_token(128);
   while(length){
@@ -174,8 +175,10 @@ static void MMC_get_data(u08* ptr_data, u16 length){
   spi_io(0xff);
   spi_io(0xff);
 };
+*/
 
 // reads the CSD reg from the card
+/*
 static void MMC_get_CSD(u08 *ptr_data){
 	// select card
 	MMC_CS_select();
@@ -188,6 +191,7 @@ static void MMC_get_CSD(u08 *ptr_data){
 	// cleanup behind us
 	MMC_cleanup();
 };
+*/
 
 // set the BLOCKLEN for transmissions
 static void MMC_set_blocklen(u16 blocklen){
