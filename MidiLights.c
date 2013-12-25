@@ -28,7 +28,7 @@ u08 gKey = 0x00;
 uint8_t gRc5checking = 0;
 
 // 外部割り込み
-ISR(INT0_vect)
+ISR(INT1_vect)
 {
 	gKey = 0x01;
 
@@ -305,10 +305,10 @@ int main(void)
 	DDRC = 0xFF;
 	PORTC = 0xFF;
 
-	// D0は、MIDI入力。D1は、MIDI出力。D2は、赤外線リモコン受信用外部割り込み
+	// D0は、MIDI入力。D1は、MIDI出力。D3は、赤外線リモコン受信用外部割り込み
 	// D5-D7は、LEDの制御スイッチ
-	DDRD = 0xFA;
-	PORTD = 0xE7;
+	DDRD = 0xF6;
+	PORTD = 0xEB;
 
 	// タイマ設定
 	TCCR0B = 0x01;	// プリスケーラは、1
@@ -352,9 +352,9 @@ int main(void)
 		_delay_ms(3);
 	}
 	// ピン変化割り込み(赤外線リモコン受信許可)
-	EICRA = 0x02;	// 外部割り込み０ INT0 が HIGH → LOW
-	EIFR = 0x01;	// 割り込みペンディングをクリア
-	EIMSK |= 1;		// 外部割り込み０許可
+	EICRA = 0x08;	// 外部割り込み１ INT1 が HIGH → LOW
+	EIFR = 0x02;	// 割り込みペンディングをクリア
+	EIMSK |= 2;		// 外部割り込み１許可
 
 	main2();
 
