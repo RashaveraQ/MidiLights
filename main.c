@@ -1523,11 +1523,11 @@ union {
 				// LEDとキーボードが一致しているか調べる。
 				isEqualLEDsAndKeyboard = true;
 				for (i = 0; i < 8; i++) {
-					if (gLEDs[i] != gPianoKeys[i]) {
+					gLEDs[i] &= ~gPianoKeys[i];
+					if (gLEDs[i])
 						isEqualLEDsAndKeyboard = false;
-						break;
-					}	
 				}
+				
 				if (!isEqualLEDsAndKeyboard) {
 					if (TCCR1B)
 						stop_time();
