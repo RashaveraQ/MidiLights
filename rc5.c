@@ -3,7 +3,7 @@
 #include "rc5.h"
 
 
-extern uint16_t	gData[8];	// akashi
+extern uint16_t	gLEDs[8];	// akashi
 
 #define __AVR_ATmega168__	// akashi
 
@@ -190,7 +190,7 @@ void rc5_INT0_vect()
 			goto invalid;
 		}
 
-		gData[0]++;	// akashi
+		gLEDs[0]++;	// akashi
 
 		/* store the just received 1 or 2 bits */
 		do {
@@ -203,7 +203,7 @@ void rc5_INT0_vect()
 
 		if (0) {
 			invalid:
-			gData[1]++;	// akashi
+			gLEDs[1]++;	// akashi
 			/* disable INTx, run into Overflow0 */
 			EIMSK &= ~1;	// äOïîäÑÇËçûÇ›ã÷é~
 			_nbits = 0;

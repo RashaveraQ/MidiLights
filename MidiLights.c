@@ -22,7 +22,8 @@ void rc5_exit();
 
 extern u16 file_cnt;
 
-uint16_t	gData[8];
+uint16_t	gLEDs[8];
+uint16_t    gPianoKeys[8];
 
 u08 gKey = 0x00;
 uint8_t gRc5checking = 0;
@@ -103,9 +104,9 @@ ISR(TIMER0_OVF_vect)
 
 		PORTA = 0;	// LEDの電源OFF
 
-		PORTC = 0xFF & ~(gData[sLedPowerBit]);
+		PORTC = 0xFF & ~(gLEDs[sLedPowerBit]);
 		PORTD &= 0x1F;
-		PORTD |= 0xE0 & (~(gData[sLedPowerBit] >> 3));
+		PORTD |= 0xE0 & (~(gLEDs[sLedPowerBit] >> 3));
 
 		//gData[2] = rc5.code;
 		//gData[3] = rc5.addr;
@@ -196,10 +197,10 @@ retry:
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 		case 0x90:	// ノートオン
-			gData[idx] |= data;
+			gLEDs[idx] |= data;
 			break;
 		case 0x80:	// ノートオフ
-			gData[idx] &= ~data;
+			gLEDs[idx] &= ~data;
 			break;
 		}
 		note = -1;
@@ -216,7 +217,7 @@ retry:
 		case 0x7E:
 		case 0x7F:
 			for (int i = 0; i < 8; i++) {
-				gData[i] = 0;
+				gLEDs[i] = 0;
 			}
 			break;
 		}
@@ -248,10 +249,6 @@ ISR(USART1_RX_vect)
 	}
 
 	uint8_t d = UDR1;
-
-//	gData[idx] = UDR1;
-//	idx++;
-//	idx &= 0x07;
 
 	retry:
 	switch (operand) {
@@ -311,10 +308,10 @@ ISR(USART1_RX_vect)
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 			case 0x90:	// ノートオン
-			gData[idx] |= data;
+			gPianoKeys[idx] |= data;
 			break;
 			case 0x80:	// ノートオフ
-			gData[idx] &= ~data;
+			gPianoKeys[idx] &= ~data;
 			break;
 		}
 		note = -1;
@@ -331,7 +328,7 @@ ISR(USART1_RX_vect)
 			case 0x7E:
 			case 0x7F:
 			for (int i = 0; i < 8; i++) {
-				gData[i] = 0;
+				gPianoKeys[i] = 0;
 			}
 			break;
 		}
@@ -372,11 +369,11 @@ ISR(USART1_UDRE_vect)
 void error(uint8_t err) {
 	sei();
 	for (u08 i = 0; i < 5; i++) {
-		gData[0] = err;
+		gLEDs[0] = err;
 		delay_ms(500);
-		gData[0] = 0xff;
+		gLEDs[0] = 0xff;
 		delay_ms(100);
-		gData[0] = 0;
+		gLEDs[0] = 0;
 		delay_ms(100);
 	}	
 }
@@ -450,28 +447,28 @@ int main(void)
 	for (int8_t i = 0; i < 88; i++) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
-		gData[idx] |= data;
+		gLEDs[idx] |= data;
 		_delay_ms(3);
 	}
 
 	for (int8_t i = 0; i < 88; i++) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
-		gData[idx] &= ~data;
+		gLEDs[idx] &= ~data;
 		_delay_ms(3);
 	}
 
 	for (int8_t i = 87; i >= 0; i--) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
-		gData[idx] |= data;
+		gLEDs[idx] |= data;
 		_delay_ms(3);
 	}
 
 	for (int8_t i = 87; i >= 0; i--) {
 		uint8_t idx = i / 11;
 		uint16_t data = 1 << (i % 11);
-		gData[idx] &= ~data;
+		gLEDs[idx] &= ~data;
 		_delay_ms(3);
 	}
 	// ピン変化割り込み(赤外線リモコン受信許可)

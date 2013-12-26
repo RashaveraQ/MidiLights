@@ -192,7 +192,8 @@ extern struct fat_filedata_st fat_filedata;
 extern u32 sect;
 extern u08 filemode;
 
-extern uint16_t	gData[8];	// akashi
+extern uint16_t	gLEDs[8];	// akashi
+extern uint16_t	gPianoKeys[8];	// akashi
 void error(uint8_t);		// akashi
 
 // Local Functions
@@ -1285,6 +1286,7 @@ union {
 } temp;
 	u08 ev, len, adp=0, ade=0, lyrx, lyry, trp=0, ch=0, ch_nact=0, i;
 	u16 gl_timeset;
+    bool isEqualLEDsAndKeyboard;
 
 	file_pos = (u16 *)sharedmem;
 	hw_init();
@@ -1517,6 +1519,22 @@ union {
 			calc_tempo();
 			start_time();	// Start Time
 			while (state == PLAY) {
+				
+				// LEDとキーボードが一致しているか調べる。
+				isEqualLEDsAndKeyboard = true;
+				for (i = 0; i < 8; i++) {
+					if (gLEDs[i] != gPianoKeys[i]) {
+						isEqualLEDsAndKeyboard = false;
+						break;
+					}	
+				}
+				if (!isEqualLEDsAndKeyboard) {
+					if (TCCR1B)
+						stop_time();
+					continue;
+				}
+				start_time();
+				
 				if (trk_len == 0) {	// Tracklen wird heruntergez臧lt. Bei 0 = Ende erreicht
 					state = STOP;
 					break;
