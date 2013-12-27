@@ -76,27 +76,7 @@ available on www.mikrocontroller.net!
 #define MAX_TICK	5
 #define MAX_DECAY	7
 
-// Buttons
-//#define KEY_PORT	PIND	// akashi
-//#define KEY_PORT2	PINB	// akashi
-
-#define KEY_MASK	0xf8
-#define KEY_PLAY	0x80
-
-#define KEY_REP_TIME_INIT	80
-#define KEY_REP_TIME		20
-#define FAST_SCROLL			30
-#define KEY_REP_TIME_INIT_IR	5
-#define KEY_REP_TIME_IR			1
-
-#define KEY_MASK2	0x03
-
-#define KEY_STOP	0x08
-#define KEY_REC		0x10
-#define KEY_NEXT	0x20
-#define KEY_LAST	0x40
-#define KEY_LEFT	0x02
-#define KEY_RIGHT	0x01
+#include "keydefine.h"
 
 #define RC5_CODE_PLAY	0x35
 #define RC5_CODE_STOP	0x36
@@ -699,17 +679,15 @@ static void key_detect(void) {
 	static u08 ok=0, wur=0;
 	static u08 kpt=0, krc=0;//!
 	u08 lwur=0;
+	extern u08 gKey;
 
-	u08 k = /* ((u08)(~KEY_PORT)&KEY_MASK) | ((u08)(~KEY_PORT2)&KEY_MASK2) */ 0x00;	// akashi
+	u08 k = /* ((u08)(~KEY_PORT)&KEY_MASK) | ((u08)(~KEY_PORT2)&KEY_MASK2) */ gKey;	// akashi
+	gKey = 0x00;
 	u08 i;
 	bool isLedsOn = false;
 	
-	extern u08 gKey;
-
-	if (gKey) {
-		gKey = 0x00;
-		k = KEY_STOP;
-		// 練習モード停止。
+	if (k & KEY_STOP) {
+		// 練習モード終了
 		gIsPracticeMode = false;
 	}
 

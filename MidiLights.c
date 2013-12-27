@@ -12,6 +12,7 @@
 #include "fat16.h"
 #include "types.h"
 #include "rc5.h"
+#include "keydefine.h"
 
 void rc5_TIMER0_OVF_vect();
 void rc5_INT0_vect();
@@ -31,7 +32,7 @@ uint8_t gRc5checking = 0;
 // 外部割り込み
 ISR(INT1_vect)
 {
-	gKey = 0x01;
+	gKey = KEY_STOP;
 
 /*	static u32 data = 0;
 	static u08 nbit = 0;
@@ -306,11 +307,23 @@ ISR(USART1_RX_vect)
 		uint8_t idx = note / 11;
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
-			case 0x90:	// ノートオン
+		case 0x90:	// ノートオン
+			// 練習モードの場合、
 			if (gIsPracticeMode)
 				gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
-			// 練習モードとする。
-			gIsPracticeMode = true;
+			break;
+		case 0x80:	// ノートオフ
+			if (!gIsPracticeMode) {
+				switch (note) {
+				case  0: gKey = KEY_LEFT;			break;
+				case  2: gKey = KEY_RIGHT;			break;
+				case  3: gKey = KEY_NEXT;			break;
+				case  5: gKey = KEY_LAST;			break;
+				case  7: gKey = KEY_STOP;			break;
+				case  8: gKey = KEY_PLAY;			break;
+				case 87: gIsPracticeMode = true;	break;	
+				}
+			}
 			break;
 		}
 		note = -1;
