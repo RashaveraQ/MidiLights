@@ -708,9 +708,9 @@ static void key_detect(void) {
 
 	if (gKey) {
 		gKey = 0x00;
-		//k = KEY_STOP;
-		// 練習モードを切り替える。
-		gIsPracticeMode = !gIsPracticeMode;
+		k = KEY_STOP;
+		// 練習モード停止。
+		gIsPracticeMode = false;
 	}
 
 	// 練習モードの場合、

@@ -307,7 +307,10 @@ ISR(USART1_RX_vect)
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 			case 0x90:	// ノートオン
-			gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
+			if (gIsPracticeMode)
+				gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
+			// 練習モードとする。
+			gIsPracticeMode = true;
 			break;
 		}
 		note = -1;
