@@ -23,7 +23,6 @@ void rc5_exit();
 extern u16 file_cnt;
 
 uint16_t	gLEDs[8];
-uint16_t    gPianoKeys[8];
 bool gIsPracticeMode;		// 練習モード
 
 u08 gKey = 0x00;
@@ -308,10 +307,7 @@ ISR(USART1_RX_vect)
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 			case 0x90:	// ノートオン
-			gPianoKeys[idx] |= data;
-			break;
-			case 0x80:	// ノートオフ
-			gPianoKeys[idx] &= ~data;
+			gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
 			break;
 		}
 		note = -1;
@@ -319,19 +315,6 @@ ISR(USART1_RX_vect)
 		break;
 		case 0xB0:	// コントロールチェンジ or モード・チェンジ
 		// オール・ノート・オフ
-		switch (d) {
-			case 0x78:
-			case 0x79:
-			case 0x7B:
-			case 0x7C:
-			case 0x7D:
-			case 0x7E:
-			case 0x7F:
-			for (int i = 0; i < 8; i++) {
-				gPianoKeys[i] = 0;
-			}
-			break;
-		}
 		// break しない
 		case 0xC0:	// プログラムチェンジ
 		ignore_count = 1;
