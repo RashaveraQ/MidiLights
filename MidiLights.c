@@ -24,6 +24,7 @@ extern u16 file_cnt;
 
 uint16_t	gLEDs[8];
 uint16_t    gPianoKeys[8];
+bool gIsPracticeMode;		// ó˚èKÉÇÅ[Éh
 
 u08 gKey = 0x00;
 uint8_t gRc5checking = 0;
@@ -126,7 +127,6 @@ ISR(TIMER0_OVF_vect)
 // USART0, Rx Complete 
 ISR(USART0_RX_vect)
 {
-	//gData[1] = 0x1;
 	static uint8_t	operand = 0;
 	static uint8_t  operand_bak = 0;
 	static int8_t	note = -1;
@@ -442,6 +442,8 @@ int main(void)
 	MMC_hw_init();
 	spi_init();
 //	rc5_init(RC5_ALL);
+
+	gIsPracticeMode = false;
 
 	sei();
 	for (int8_t i = 0; i < 88; i++) {

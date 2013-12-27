@@ -192,9 +192,10 @@ extern struct fat_filedata_st fat_filedata;
 extern u32 sect;
 extern u08 filemode;
 
-extern uint16_t	gLEDs[8];	// akashi
+extern uint16_t	gLEDs[8];		// akashi
 extern uint16_t	gPianoKeys[8];	// akashi
-void error(uint8_t);		// akashi
+extern bool gIsPracticeMode;	// 練習モード
+void error(uint8_t);			// akashi
 
 // Local Functions
 static void hw_init(void);
@@ -706,7 +707,9 @@ static void key_detect(void) {
 
 	if (gKey) {
 		gKey = 0x00;
-		k = KEY_STOP;
+		//k = KEY_STOP;
+		// 練習モードを切り替える。
+		gIsPracticeMode = !gIsPracticeMode;
 	}
 
 
@@ -1519,21 +1522,27 @@ union {
 			calc_tempo();
 			start_time();	// Start Time
 			while (state == PLAY) {
-				
-				// LEDとキーボードが一致しているか調べる。
-				isEqualLEDsAndKeyboard = true;
-				for (i = 0; i < 8; i++) {
-					gLEDs[i] &= ~gPianoKeys[i];
-					if (gLEDs[i])
-						isEqualLEDsAndKeyboard = false;
+				// 練習モードの場合、
+				if (gIsPracticeMode) {
+					// LEDとキーボードが一致しているか調べる。
+					isEqualLEDsAndKeyboard = true;
+					for (i = 0; i < 8; i++) {
+						// 押した鍵盤のLEDを消す。
+						gLEDs[i] &= ~gPianoKeys[i];
+						// LEDが光っている場合、
+						if (gLEDs[i])
+							isEqualLEDsAndKeyboard = false;
+					}
+					// LEDとキーボードが一致していない場合、
+					if (!isEqualLEDsAndKeyboard) {
+						if (TCCR1B)
+							// MIDIファイルの読み込みを一時停止する。
+							stop_time();
+						continue;
+					}
+					// MIDIファイルの読み込みを再開する。
+					start_time();
 				}
-				
-				if (!isEqualLEDsAndKeyboard) {
-					if (TCCR1B)
-						stop_time();
-					continue;
-				}
-				start_time();
 				
 				if (trk_len == 0) {	// Tracklen wird heruntergez臧lt. Bei 0 = Ende erreicht
 					state = STOP;
