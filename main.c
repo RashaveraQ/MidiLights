@@ -94,15 +94,6 @@ available on www.mikrocontroller.net!
 #define DEFAULT_OSCCAL_POS	32
 
 
-// States
-#define STOP	0
-#define PLAY	1
-#define REC		2
-#define ABORT_REC	3
-#define DELETE	4
-#define MENU	5
-#define ERR		0x80
-
 // EEPROM
 #define EE_VERSION_POS	0
 #define EE_DRUMCH_POS	1
@@ -1748,8 +1739,6 @@ union {
 		} else if (state == STOP) {
 			gl_lyr = false;
 			key_detect();
-			file_num = random_song(file_num, file_cnt);	// akashi
-			state = PLAY;	// akashi
 		} else if (state == MENU) {
 			key_detect();
 		} else {

@@ -42,7 +42,7 @@
       <ToolOptions>
         <InterfaceProperties>
           <JtagEnableExtResetOnStartSession>false</JtagEnableExtResetOnStartSession>
-          <IspClock>125000</IspClock>
+          <IspClock>2000</IspClock>
         </InterfaceProperties>
         <InterfaceName>ISP</InterfaceName>
       </ToolOptions>
@@ -75,6 +75,9 @@
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
   <ItemGroup>
     <Compile Include="fat16.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="keydefine.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="mmc.h">

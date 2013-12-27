@@ -31,6 +31,14 @@
 #define KEY_LEFT	0x02
 #define KEY_RIGHT	0x01
 
+// States
+#define STOP	0
+#define PLAY	1
+#define REC		2
+#define ABORT_REC	3
+#define DELETE	4
+#define MENU	5
+#define ERR		0x80
 
 
 

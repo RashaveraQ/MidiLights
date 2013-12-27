@@ -21,7 +21,7 @@ void rc5_init2();
 void main2(void);
 void rc5_exit();
 
-extern u16 file_cnt;
+extern u08 file_num, file_cnt, state;
 
 uint16_t	gLEDs[8];
 bool gIsPracticeMode;		// ó˚èKÉÇÅ[Éh
@@ -321,7 +321,13 @@ ISR(USART1_RX_vect)
 				case  5: gKey = KEY_LAST;			break;
 				case  7: gKey = KEY_STOP;			break;
 				case  8: gKey = KEY_PLAY;			break;
-				case 87: gIsPracticeMode = true;	break;	
+				case 87: gIsPracticeMode = true;	break;
+				default:
+					if (state != PLAY) {
+						file_num = (note - 9) % file_cnt;
+						gKey = KEY_PLAY;
+					}
+					break;
 				}
 			}
 			break;
