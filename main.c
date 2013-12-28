@@ -179,7 +179,7 @@ static void key_detect(void);
 static void debounce(u08 mode);
 static void wait_for_deltatime(void);
 static void clear_time(void);
-static void start_time(void);
+void start_time(void);
 static void stop_time(void);
 static void send_all_ch(u08 data);
 static void send_all_off(void);
@@ -1227,7 +1227,7 @@ static void clear_time(void) {
 
 /** Zeitanzeige starten.
 */
-static void start_time(void) {
+void start_time(void) {
 	print_time();
 	TCNT1 = 0;
 	TCCR1B = 8+2;

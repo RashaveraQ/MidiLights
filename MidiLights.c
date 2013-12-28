@@ -20,6 +20,7 @@ void rc5_init2();
 
 void main2(void);
 void rc5_exit();
+void start_time(void);
 
 extern u08 file_num, file_cnt, state;
 
@@ -313,7 +314,12 @@ ISR(USART1_RX_vect)
 				gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
 			break;
 		case 0x80:	// ノートオフ
-			if (!gIsPracticeMode) {
+			if (gIsPracticeMode) {
+				if (note == 0) {
+					gIsPracticeMode = false;
+					start_time();
+				}
+			} else {
 				switch (note) {
 				case  0: gKey = KEY_LEFT;			break;
 				case  2: gKey = KEY_RIGHT;			break;
