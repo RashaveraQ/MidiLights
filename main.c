@@ -691,18 +691,15 @@ static void key_detect(void) {
 				isLedsOn = true;
 				// Ä¶’†‚Ìê‡A
 				if (TCCR1B) {
-					//send_all_off();
 					stop_time();
-					return;
+					break;
 				}
 			}
 		}
 		// ‘S‚Ä‚ÌLED‚ªÁ“”‚Ìê‡A
-		if (!isLedsOn) {
-			k = KEY_PLAY;
-			//start_time();
+		if (!isLedsOn && TCCR1B == 0x00) {
+			start_time();
 		}
-		//return;
 	}
 
 	if ((k&KEY_NEXT) && (k&KEY_LAST)) {
