@@ -317,10 +317,10 @@ ISR(USART1_RX_vect)
 				switch (note) {
 				case  0: gKey = KEY_LEFT;			break;
 				case  2: gKey = KEY_RIGHT;			break;
-				case  3: gKey = KEY_NEXT;			break;
-				case  5: gKey = KEY_LAST;			break;
-				case  7: gKey = KEY_STOP;			break;
-				case  8: gKey = KEY_PLAY;			break;
+				case  3: gKey = KEY_LAST;			break;
+				case  5: gKey = KEY_NEXT;			break;
+				case  7: gKey = KEY_PLAY;			break;
+				case  8: gKey = KEY_STOP;			break;
 				case 87: gIsPracticeMode = true;	break;
 				default:
 					if (state != PLAY) {
@@ -428,7 +428,10 @@ int main(void)
 	DDRC = 0xFF;
 	PORTC = 0xFF;
 
-	// D0は、MIDI入力。D1は、MIDI出力。D3は、赤外線リモコン受信用外部割り込み
+	// D0 : SDカードからのMIDI入力
+	// D1 : YAMAHAのMIDI入力ポートへのMIDI出力
+	// D2 : YAMAHAのMIDI出力からのMIDI入力
+	// D3 : 赤外線リモコン受信用外部割り込み
 	// D5-D7は、LEDの制御スイッチ
 	DDRD = 0xF2;
 	PORTD = 0xEF;

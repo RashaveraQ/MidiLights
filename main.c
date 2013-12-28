@@ -1503,6 +1503,8 @@ union {
 //			speed = -4;		// a little fast
 //			speed = -5;		// a little slow
 			gl_lyr = false;
+			for (i = 0; i < 8; i++)
+				gLEDs[i] = 0x00;
 			for (i = 0; i < 16; i++) {
 				midisig[i] = 0;
 				notecnt[i] = 0;
@@ -1738,6 +1740,14 @@ union {
 			print_main();
 		} else if (state == STOP) {
 			gl_lyr = false;
+			
+			// ファイル番号に対応するLEDを点灯する。
+			uint8_t idx = (file_num + 9) / 11;
+			uint16_t data = 1 << ((file_num + 9) % 11);
+			for (int i = 0; i < 8; i++) {
+				gLEDs[i] = (i == idx) ? data : 0x00;
+			}
+			
 			key_detect();
 		} else if (state == MENU) {
 			key_detect();
