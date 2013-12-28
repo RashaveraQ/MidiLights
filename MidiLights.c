@@ -319,8 +319,8 @@ ISR(USART1_RX_vect)
 				case  2: gKey = KEY_RIGHT;			break;
 				case  3: gKey = KEY_LAST;			break;
 				case  5: gKey = KEY_NEXT;			break;
-				case  7: gKey = KEY_PLAY;			break;
-				case  8: gKey = KEY_STOP;			break;
+				case  7: gKey = KEY_STOP;			break;
+				case  8: gKey = KEY_PLAY;			break;
 				case 87: gIsPracticeMode = true;	break;
 				default:
 					if (state != PLAY) {
