@@ -1625,7 +1625,8 @@ union {
 								i += transpose;
 							sendbyte(i);
 							i = fetchbyte();
-							sendbyte(i);
+							// 練習モードの場合は、最小音量とする。
+							sendbyte(gIsPracticeMode ? 0x01 : i);
 							if ((ade&0xf0) == 0x90) { // NoteOn
 								i = (i>>4)+1;
 								if (i > 7) i = 7;
