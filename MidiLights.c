@@ -323,14 +323,14 @@ ISR(USART1_RX_vect)
 				switch (note) {
 				case  0: gKey = KEY_PLAY;			break;
 				case  2: gKey = KEY_STOP;			break;
-				case  3: gKey = KEY_LAST;			break;
-				case  5: gKey = KEY_NEXT;			break;
-				case  7: gKey = KEY_LEFT;			break;
-				case  8: gKey = KEY_RIGHT;			break;
+				case  3: gKey = KEY_LEFT;			break;
+				case  5: gKey = KEY_RIGHT;			break;
+				//case  7: gKey = KEY_LAST;			break;
+				//case  8: gKey = KEY_NEXT;			break;
 				case 87: gIsPracticeMode = true;	break;
 				default:
 					if (state != PLAY) {
-						file_num = (note - 9) % file_cnt;
+						file_num = (note - FILE_NUM_START_NOTE) % file_cnt;
 						gKey = KEY_PLAY;
 					}
 					break;

@@ -588,9 +588,6 @@ static void calc_tempo(void) {
 		TCNT1 = 0;
 		dspd = 0;
 	}
-
-	tempo = tempo * 5 / 4;	// akashi
-
 	new_ocr1a = tempo - (tempo>>4)*speed;
 	flags |= OCCHNG_FLAG;
 	if (!gl_lyr && !(ee_midimon&2)) {
@@ -1489,6 +1486,7 @@ union {
 				tempo = 500000UL/gl_timeset;
 			else				// SMPTE-Timeformat
 				tempo = 1000000UL/(-(s08)(gl_timeset>>8))/gl_timeset;
+			tempo = tempo * 5 / 4;
 			checkstring((u08*)"MTrk", 4);	// Track lesen
 			temp.byte[3] = fetchbyte();	// L舅ge lesen
 			temp.byte[2] = fetchbyte();
@@ -1535,6 +1533,7 @@ union {
 						temp.byte[0] = fetchbyte();
 						TCNT1 = 0;
 						tempo = temp.udword/gl_timeset;
+						tempo = tempo * 5 / 4;
 						calc_tempo();
 						break;
 					case 0x05:	// Lyrics
@@ -1740,8 +1739,8 @@ union {
 			gl_lyr = false;
 			
 			// ファイル番号に対応するLEDを点灯する。
-			uint8_t idx = (file_num + 9) / 11;
-			uint16_t data = 1 << ((file_num + 9) % 11);
+			uint8_t idx = (file_num + FILE_NUM_START_NOTE) / 11;
+			uint16_t data = 1 << ((file_num + FILE_NUM_START_NOTE) % 11);
 			for (int i = 0; i < 8; i++) {
 				gLEDs[i] = (i == idx) ? data : 0x00;
 			}

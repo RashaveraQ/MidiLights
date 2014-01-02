@@ -40,6 +40,6 @@
 #define MENU	5
 #define ERR		0x80
 
-
+#define FILE_NUM_START_NOTE 6	// ファイル番号開始ノート
 
 #endif /* KEYDEFINE_H_ */
