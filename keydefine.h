@@ -42,4 +42,9 @@
 
 #define FILE_NUM_START_NOTE 6	// ファイル番号開始ノート
 
+// 練習モード
+#define PRACTICE_MODE_LEFT	1	// 左手
+#define PRACTICE_MODE_RIGHT	2	// 右手
+#define PRACTICE_MODE_BOTH	3	// 両手
+
 #endif /* KEYDEFINE_H_ */

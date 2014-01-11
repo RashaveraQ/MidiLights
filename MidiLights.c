@@ -25,7 +25,7 @@ void start_time(void);
 extern u08 file_num, file_cnt, state;
 
 uint16_t	gLEDs[8];
-bool gIsPracticeMode;		// 練習モード
+u08 gPracticeMode;		// 練習モード
 
 u08 gKey = 0x00;
 uint8_t gRc5checking = 0;
@@ -132,6 +132,7 @@ ISR(USART0_RX_vect)
 	static uint8_t  operand_bak = 0;
 	static int8_t	note = -1;
 	static uint8_t	ignore_count = 0;
+	static uint8_t	channel = 0;
 
 	if (ignore_count) {
 		ignore_count--;
@@ -151,6 +152,7 @@ retry:
 		case 0xB0:	// コントロールチェンジ or モード・チェンジ
 		case 0xC0:	// プログラムチェンジ
 			operand_bak = operand = 0xF0 & d;
+			channel = 0x0F & d;
 			break;
 		case 0xF0:	// システム・リアルタイム・メッセージ
 			switch (d) {
@@ -198,7 +200,10 @@ retry:
 		uint16_t data = 1 << (note % 11);
 		switch (operand) {
 		case 0x90:	// ノートオン
-			gLEDs[idx] |= data;
+			if (gPracticeMode == 0 || (gPracticeMode == PRACTICE_MODE_BOTH)
+				|| (gPracticeMode == PRACTICE_MODE_LEFT && channel == 0x01)
+				|| (gPracticeMode == PRACTICE_MODE_RIGHT && channel == 0x00))
+				gLEDs[idx] |= data;
 			break;
 		case 0x80:	// ノートオフ
 			gLEDs[idx] &= ~data;
@@ -310,13 +315,13 @@ ISR(USART1_RX_vect)
 		switch (operand) {
 		case 0x90:	// ノートオン
 			// 練習モードの場合、
-			if (gIsPracticeMode)
+			if (gPracticeMode)
 				gLEDs[idx] &= ~data;	// 対応するLEDを消灯する。
 			break;
 		case 0x80:	// ノートオフ
-			if (gIsPracticeMode) {
+			if (gPracticeMode) {
 				if (note == 0) {
-					gIsPracticeMode = false;
+					gPracticeMode = 0;
 					start_time();
 				}
 			} else {
@@ -327,7 +332,9 @@ ISR(USART1_RX_vect)
 				case  5: gKey = KEY_RIGHT;			break;
 				//case  7: gKey = KEY_LAST;			break;
 				//case  8: gKey = KEY_NEXT;			break;
-				case 87: gIsPracticeMode = true;	break;
+				case 84: gPracticeMode = PRACTICE_MODE_LEFT;	break;
+				case 86: gPracticeMode = PRACTICE_MODE_RIGHT;	break;
+				case 87: gPracticeMode = PRACTICE_MODE_BOTH;	break;
 				default:
 					if (state != PLAY) {
 						file_num = (note - FILE_NUM_START_NOTE) % file_cnt;
@@ -457,7 +464,7 @@ int main(void)
 	spi_init();
 //	rc5_init(RC5_ALL);
 
-	gIsPracticeMode = false;
+	gPracticeMode = 0;
 
 	sei();
 	for (int8_t i = 0; i < 88; i++) {

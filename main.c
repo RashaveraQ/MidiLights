@@ -164,7 +164,7 @@ extern u32 sect;
 extern u08 filemode;
 
 extern uint16_t	gLEDs[8];		// akashi
-extern bool gIsPracticeMode;	// 練習モード
+extern u08 gPracticeMode;	// 練習モード
 void error(uint8_t);			// akashi
 
 // Local Functions
@@ -676,11 +676,11 @@ static void key_detect(void) {
 	
 	if (k & KEY_STOP) {
 		// 練習モード終了
-		gIsPracticeMode = false;
+		gPracticeMode = 0;
 	}
 
 	// 練習モードの場合、
-	if (gIsPracticeMode) {
+	if (gPracticeMode) {
 		// 全てのLEDについて、		
 		for (i = 0; i < 8; i++) {
 			// 点灯している場合、
@@ -1625,7 +1625,9 @@ union {
 							sendbyte(i);
 							i = fetchbyte();
 							// 練習モードの場合は、最小音量とする。
-							sendbyte(gIsPracticeMode ? 0x01 : i);
+							sendbyte(gPracticeMode == PRACTICE_MODE_BOTH
+									 || (gPracticeMode == PRACTICE_MODE_LEFT && ch == 1)
+									 || (gPracticeMode == PRACTICE_MODE_RIGHT && ch == 0) ? 0x01 : i);
 							if ((ade&0xf0) == 0x90) { // NoteOn
 								i = (i>>4)+1;
 								if (i > 7) i = 7;
